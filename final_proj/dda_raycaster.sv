@@ -14,7 +14,7 @@ module dda_raycaster (
     input  logic        map_hit,   // 1 if wall, 0 if empty
 
     // Outputs to the Renderer
-    output logic [15:0] final_distance,
+    output logic [15:0] finalDist,
     output logic        ray_done
   );
 
@@ -32,42 +32,36 @@ module dda_raycaster (
 
   state_t state, next_state;
 
-  // DDA Internal Registers (Q8.8 Format)
+  // DDA reg (q8.8)
   logic [15:0] sideDistX, sideDistY;
   logic [15:0] deltaDistX, deltaDistY;
   logic [3:0]  map_x, map_y;
   logic signed [1:0] step_x, step_y; // +1 or -1
   logic hit_side; // 0 for vertical wall (X), 1 for horizontal wall (Y)
 
-  // Next-value signals for clean FSM/register style
   logic [15:0] sideDistX_next, sideDistY_next;
   logic [15:0] deltaDistX_next, deltaDistY_next;
   logic [3:0]  map_x_next, map_y_next;
   logic signed [1:0] step_x_next, step_y_next;
   logic hit_side_next;
-  logic [15:0] final_distance_next;
+  logic [15:0] finalDist_next;
   logic        ray_done_next;
 
-  // --- ROM Outputs ---
+  // DistX/Y inv trig rom
   logic [15:0] rom_deltaX, rom_deltaY;
-  // Instantiate your Cosecant/Secant ROM for delta distances
   inv_trig_rom inv_trig_inst (
                  .clk(clk),
                  .angle(ray_angle),
-                 .abs_sec_out(rom_deltaX), // Distance between X grid lines
-                 .abs_csc_out(rom_deltaY)  // Distance between Y grid lines
+                 .abs_sec_out(rom_deltaX),
+                 .abs_csc_out(rom_deltaY)
                );
 
-  // --- Direction Flags ---
-  logic ray_facing_right, ray_facing_up;
+  // checking quadrant with math coords +y up +x right
+  logic ray_right, ray_up;
   always_comb
   begin
-    // Right (+X) is between 270 (192) and 90 (64) degrees
-    ray_facing_right = (ray_angle < 8'd64) || (ray_angle >= 8'd192);
-
-    // Up (+Y) is between 0 (0) and 180 (128) degrees
-    // (Assuming standard math coordinates where +Y is UP)
-    ray_facing_up = (ray_angle > 8'd0) && (ray_angle < 8'd128);
+    ray_right = (ray_angle < 8'd64) || (ray_angle >= 8'd192);
+    ray_up = (ray_angle > 8'd0) && (ray_angle < 8'd128);
   end
 
   assign map_x_out = map_x;
@@ -89,12 +83,12 @@ module dda_raycaster (
       sideDistY <= sideDistY_next;
       deltaDistX <= deltaDistX_next;
       deltaDistY <= deltaDistY_next;
+      finalDist <= finalDist_next;
+      hit_side <= hit_side_next;
       map_x <= map_x_next;
       map_y <= map_y_next;
       step_x <= step_x_next;
       step_y <= step_y_next;
-      hit_side <= hit_side_next;
-      final_distance <= final_distance_next;
       ray_done <= ray_done_next;
     end
   end
@@ -102,19 +96,17 @@ module dda_raycaster (
   // FSM
   always_comb
   begin
-    next_state = state; // Default stay in current state
-
-    // Default hold for all registers
+    next_state = state;
     sideDistX_next = sideDistX;
     sideDistY_next = sideDistY;
     deltaDistX_next = deltaDistX;
     deltaDistY_next = deltaDistY;
+    finalDist_next = finalDist;
+    hit_side_next = hit_side;
     map_x_next = map_x;
     map_y_next = map_y;
     step_x_next = step_x;
     step_y_next = step_y;
-    hit_side_next = hit_side;
-    final_distance_next = final_distance;
     ray_done_next = ray_done;
 
     case (state)
@@ -130,10 +122,8 @@ module dda_raycaster (
         end
       end
 
-
-      INIT_1:
+      INIT_1: // wait inv_trig_rom -> output deltaDist
       begin
-        // Wait 1 clock cycle for inverse_trig_rom to output deltaDist
         deltaDistX_next = rom_deltaX;
         deltaDistY_next = rom_deltaY;
         next_state = INIT_2;
@@ -142,7 +132,7 @@ module dda_raycaster (
       INIT_2:
       begin
         // Setup X direction and initial side distance
-        if (ray_facing_right)
+        if (ray_right)
         begin
           step_x_next = 2'sd1;
           // (1.0 - fraction) * deltaDistX
@@ -156,7 +146,7 @@ module dda_raycaster (
         end
 
         // Setup Y direction and initial side distance
-        if (ray_facing_up)
+        if (ray_up)
         begin
           step_y_next = 2'sd1;
           // (1.0 - fraction) * deltaDistY
@@ -204,13 +194,13 @@ module dda_raycaster (
 
       CALC_DIST:
       begin
-        if (hit_side == 1'b0)
+        if (hit_side)  // x-wall
         begin
-          final_distance_next = sideDistX - deltaDistX;
+          finalDist_next = sideDistY - deltaDistY;
         end
-        else
+        else           // y-wall
         begin
-          final_distance_next = sideDistY - deltaDistY;
+          finalDist_next = sideDistX - deltaDistX;
         end
         ray_done_next = 1'b1; // col ready flag
         next_state = IDLE;
