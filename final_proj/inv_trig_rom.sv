@@ -1,4 +1,4 @@
-module iv_trig_rom (
+module inv_trig_rom (
     input  logic clk,
     input  logic [7:0] angle,
     output logic [15:0] abs_sec_out, // deltaDistX
