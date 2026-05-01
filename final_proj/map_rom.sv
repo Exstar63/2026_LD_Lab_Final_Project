@@ -6,6 +6,7 @@ module map_rom (
   );
 
   // 256 addresses (16x16), each holding 1 bit of data
+  (* ram_style = "block" *)
   logic world_map [0:255];
 
   initial

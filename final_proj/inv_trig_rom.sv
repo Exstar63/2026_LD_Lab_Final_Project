@@ -6,6 +6,7 @@ module inv_trig_rom (
   );
 
   // 16-bit words * 256 index LUT for csc/sec
+  (* ram_style = "block" *)
   logic [15:0] csc_rom [0:255];
 
   // Load mem

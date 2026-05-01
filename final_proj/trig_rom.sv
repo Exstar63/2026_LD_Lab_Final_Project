@@ -6,6 +6,7 @@ module trig_rom (
   );
 
   // 16-bit words * 256 index LUT for sin/cos
+  (* ram_style = "block" *)
   logic signed [15:0] rom [0:255];
 
   // Load mem
