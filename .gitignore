@@ -4,6 +4,4 @@ final_proj/final_proj.cache/wt/project.wpc
 final_proj/final_proj.cache/wt/webtalk_pa.xml
 final_proj/final_proj.hw/final_proj.lpr
 final_proj/final_proj.xpr
-proj_test/proj_test.xpr
-proj_test/proj_test.cache/wt/project.wpc
-proj_test/proj_test.hw/proj_test.lpr
+proj_test/*
