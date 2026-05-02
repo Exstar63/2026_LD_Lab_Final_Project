@@ -1,4 +1,4 @@
-module dda_scanner (
+module dda_scanner(
     input  logic        clk,
     input  logic        rst_n,
     input  logic        v_blank,      // High when VGA is in V-Blank (inactive area)

@@ -1,4 +1,4 @@
-module dda_raycaster (
+module dda_raycaster(
     input  logic clk,
     input  logic rst_n,
 
@@ -6,7 +6,6 @@ module dda_raycaster (
     input  logic [15:0] player_x,
     input  logic [15:0] player_y,
     input  logic [7:0] ray_angle,
-    input  logic start_ray, // high when rendering_x changes
 
     // map comms
     output logic [3:0] map_x_out,
@@ -14,9 +13,10 @@ module dda_raycaster (
     input  logic map_hit,   // 1 if wall, 0 if empty
 
     // scanner / buffer / render comm
+    input  logic start_ray, // scanner control 
+    output logic ray_done,
     output logic [15:0] finalDist,
-    output logic ray_done
-    output logic hit_side,
+    output logic hit_side
   );
 
   typedef enum logic [2:0] {

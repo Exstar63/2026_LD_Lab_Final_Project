@@ -1,4 +1,4 @@
-module dist_buffer (
+module dist_buffer(
     input  logic        clk,
 
     // dda_scanner comm

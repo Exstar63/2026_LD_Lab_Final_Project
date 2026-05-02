@@ -1,4 +1,4 @@
-module camera (
+module camera(
     input  logic        clk,
     input  logic        rst_n,
 

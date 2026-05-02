@@ -1,8 +1,8 @@
-module map_rom (
+module map_rom(
     input  logic clk,
     input  logic [3:0] map_x,
     input  logic [3:0] map_y,
-    output logic hit // 1 if wall, 0 if empty
+    output logic map_hit // 1 if wall, 0 if empty
   );
 
   // 256 addresses (16x16), each holding 1 bit of data
@@ -38,7 +38,7 @@ module map_rom (
 
   always_ff @(posedge clk)
   begin
-    hit <= world_map[{map_y, map_x}]; // {Y,X} -> {row,col}
+    map_hit <= world_map[{map_y, map_x}]; // {Y,X} -> {row,col}
   end
 
 endmodule
