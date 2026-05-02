@@ -11,20 +11,20 @@ module renderer(
     output logic [11:0] vga_rgb
   );
 
-  logic [7:0] height_rom [0:255];
+  logic [7:0] height_rom [0:1023];
 
   initial
   begin
     $readmemh("height_lut.mem", height_rom);
   end
 
-  logic [7:0] lut_height, lut_index;
-  logic [7:0] next_wall_top, next_wall_bottom;
+  logic [9:0] lut_index;
+  logic [7:0] lut_height, next_wall_top, next_wall_bottom;
   logic [11:0] next_rgb;
 
   always_comb
   begin
-    lut_index = (wall_dist[15:12] != 4'd0)? 8'hFF : wall_dist[11:4];
+    lut_index = (wall_dist[15:12] != 4'd0)? 10'h3FF : wall_dist[11:2];
     lut_height = height_rom[lut_index];
     next_wall_top = 8'd120 - (lut_height >> 1);
     next_wall_bottom = 8'd120 + (lut_height >> 1);
