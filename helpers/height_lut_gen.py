@@ -1,8 +1,7 @@
 import math
 
-# Parameters
 N = 1024          # Table size (based on 12 bits of distance: Q8.4)
-SCREEN_H = 240    # Basys 3 internal vertical resolution
+SCREEN_H = 240
 PROJ_K = 240      # Projection constant (Height = K / Dist)
 
 with open("./final_proj/height_lut.mem", "w") as f:
