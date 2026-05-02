@@ -55,7 +55,7 @@ module top(
            .probe_x(probe_x),               // map_hit probe
            .probe_y(probe_y),
            .map_hit(map_hit),
-           .btn_up(btnU),                       // camera controls
+           .btn_up(btnU),                   // camera controls
            .btn_down(btnD),
            .btn_left(btnL),
            .btn_right(btnR),
