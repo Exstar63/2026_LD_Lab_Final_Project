@@ -19,7 +19,7 @@ module dda_scanner(
             NEXT_RAY   = 2'd3
           } state_t;
 
-  state_t state;
+  state_t state, state_next;
   logic [8:0] ray_count, ray_count_next;
 
   always_comb

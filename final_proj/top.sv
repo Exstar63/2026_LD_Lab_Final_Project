@@ -59,6 +59,7 @@ module top(
            .btn_down(btnD),
            .btn_left(btnL),
            .btn_right(btnR),
+           .v_blank(v_blank),
            .clk(clk),
            .rst_n(rst_n)
          );
@@ -67,8 +68,7 @@ module top(
             .map_x((v_blank)? hit_chk_x : probe_x),
             .map_y((v_blank)? hit_chk_y : probe_y),
             .map_hit(map_hit),
-            .clk(clk),
-            .rst_n(rst_n)
+            .clk(clk)
           );
 
   dda_raycaster dda_raycaseter_inst(

@@ -154,11 +154,11 @@ module dda_raycaster(
 
       CALC_DIST:
       begin
-        if (hit_side)  // x-wall
+        if (hit_side)  // y-wall
         begin
           finalDist_next = sideDistY - deltaDistY;
         end
-        else           // y-wall
+        else           // x-wall
         begin
           finalDist_next = sideDistX - deltaDistX;
         end
