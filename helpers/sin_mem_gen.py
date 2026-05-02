@@ -1,7 +1,7 @@
 import math
 
 N = 256 # 8-bit angle resolution
-with open("./Final/helpers/sine_lut.mem", "w") as f:
+with open("./Final/helpers/sin_lut.mem", "w") as f:
     for i in range(N):
         theta = (i / N) * 2 * math.pi
         val = int(round(math.sin(theta) * 256))

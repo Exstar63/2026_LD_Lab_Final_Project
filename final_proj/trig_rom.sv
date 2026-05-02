@@ -12,7 +12,7 @@ module trig_rom (
   // Load mem
   initial
   begin
-    $readmemh("sine_lut.mem", rom);
+    $readmemh("sin_lut.mem", rom);
   end
 
   // Sync read (BRAM)
