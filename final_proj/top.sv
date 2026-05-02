@@ -92,7 +92,7 @@ module top(
                 .write_data(finalDist),        // dda_raycaster in
                 .read_addr(show_x),        // vga_ctrl in
                 .read_data(renderDist)     // renderer out
-                .clk(clk),
+                .clk(clk)
               );
 
   dda_scanner dda_scanner_inst(
