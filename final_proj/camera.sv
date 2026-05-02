@@ -1,66 +1,90 @@
 module camera(
-    input  logic        clk,
-    input  logic        rst_n,
+    input logic clk,
+    input logic rst_n,
 
-    // temp input
-    input  logic        btn_up,
-    input  logic        btn_down,
-    input  logic        btn_left,
-    input  logic        btn_right,
+    // frame tick control
+    input logic v_blank,
 
-    input  logic [8:0]  rendering_x, // 0~319 wires rendering_x >>1 (index/2)
+    // player controls
+    input logic btn_up,
+    input logic btn_down,
+    input logic btn_left,
+    input logic btn_right,
 
-    // Outputs to raycaseter
+    // map_rom probe (edge detection)
+    output logic [3:0] probe_x, 
+    output logic [3:0] probe_y,
+    input logic map_hit,
+
+    // scanner comm (angle stepping)
+    input logic [8:0] rendering_x, // 0~319
+
+    // raycaseter comm
     output logic [15:0] player_x_out,
     output logic [15:0] player_y_out,
-    output logic [7:0]  ray_angle_out
+    output logic [7:0] ray_angle_out
   );
-
-  // state regs
-  logic [15:0] p_x;
-  logic [15:0] p_y;
-  logic [7:0]  p_angle;
-
-  // mov const
-  localparam logic [15:0] MOVE_SPEED = 16'd26; // ~0.1 units in Q8.8
-  localparam logic [7:0]  TURN_SPEED = 8'd2;   // 2 BAM steps
-
-  // player mov
-  always_comb
-  begin
-    player_x_out = p_x;
-    player_y_out = p_y;
-  end
-
-
-  always_ff @(posedge clk) // sync read for map rom
-    if (~rst_n)
-    begin
-      p_x     <= 16'h0180; // Spawn @ grid (1,1) facing 0 degrees
-      p_y     <= 16'h0180;
-      p_angle <= 8'd0;
-    end
-    else
-    begin
-      // ---------------------------------------------------------
-      // TODO: Implement your movement logic here.
-      //
-      // Note: Do not update positions every 100MHz clock cycle!
-      // You will want to create a `frame_tick` signal (e.g., from
-      // your VGA v_sync) and only move the player when it pulses.
-      // ---------------------------------------------------------
-    end
 
   // FOV ray calculation -> renderer comm
   logic signed [9:0]  shift_x;
   logic signed [15:0] temp_x;
-  logic [7:0]         del_angle;
+  logic [7:0] p_angle, del_angle;
   always_comb
   begin
     shift_x = $signed({1'b0, rendering_x}) - 10'sd160; // shift render coord (0~320) -> (-160~159)
     temp_x = shift_x * 16'sd51;
     del_angle = temp_x[15:8];   // *0.2=51/256=0.199
     ray_angle_out = p_angle + del_angle;
+  end
+
+  // mov state regs
+  logic [15:0] p_x, p_y, d_x, d_y;
+  logic [15:0] p_x_next, p_y_next;
+  logic [15:0] sin_val, cos_val;
+  logic [7:0] p_angle_next;
+
+  // mov const
+  localparam logic [15:0] MOVE_SPEED = 16'h0010;  // ~0.1 units in Q8.8
+  localparam logic [7:0] TURN_SPEED = 8'd2;      // 2 BAM steps
+
+  logic frame_tick, v_blank_prev;
+  always_ff @(posedge clk)
+    v_blank_prev <= v_blank;
+  assign frame_tick = (v_blank && !v_blank_prev);
+
+  trig_rom trig_mem(.sin_out(sin_val),.cos_out(cos_val),.angle(p_angle),.clk(clk));
+  q88_mult cos_mult_inst(.a(cos_val),.b(MOVE_SPEED),.out(d_x));
+  q88_mult sin_mult_inst(.a(sin_val),.b(MOVE_SPEED),.out(d_y));
+
+  // player mov (SOCD)
+  always_comb
+  begin
+    player_x_out = p_x;
+    player_y_out = p_y;
+    probe_x = p_x_next[11:8];
+    probe_y = p_y_next[11:8];
+    p_x_next = p_x + ((btn_up)? d_x : 16'd0) - ((btn_down)? d_x : 16'd0);
+    p_y_next = p_y + ((btn_up)? d_y : 16'd0) - ((btn_down)? d_y : 16'd0);
+    p_angle_next = p_angle + ((btn_left)? TURN_SPEED : 8'd0) - ((btn_right)? TURN_SPEED : 8'd0);
+  end
+
+  always_ff @(posedge clk) // sync read for map rom
+  begin
+    if (~rst_n)
+    begin
+      p_x <= 16'h0180; // init @ center of grid (1,1)
+      p_y <= 16'h0180;
+      p_angle <= 8'd0;     // init facing 0 deg
+    end
+    else if (frame_tick)
+    begin
+      p_angle <= p_angle_next;
+      if (!map_hit)
+      begin
+        p_x <= p_x_next;
+        p_y <= p_y_next;
+      end
+    end
   end
 
 endmodule

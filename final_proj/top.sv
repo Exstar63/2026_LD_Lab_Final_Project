@@ -1,11 +1,12 @@
 module top(
-    input clk,
-    input rst,
-    output [3:0] vgaRed,
-    output [3:0] vgaGreen,
-    output [3:0] vgaBlue,
-    output hsync,
-    output vsync
+    input logic clk,
+    input logic rst,
+    input logic btnU,btnD,btnL,btnR,
+    output logic [3:0] vgaRed,
+    output logic [3:0] vgaGreen,
+    output logic [3:0] vgaBlue,
+    output logic hsync,
+    output logic vsync
   );
 
   logic clk_25MHz;
@@ -16,13 +17,10 @@ module top(
 
   assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
 
-  // pixel location control
-  logic [9:0] h_cnt; //640
-  logic [9:0] v_cnt; //480
-  logic [8:0] show_x;
-  logic [8:0] show_y;
-  logic [8:0] which_x;
-  logic [8:0] rendering_x;
+  // pixel hit control
+  logic [9:0] h_cnt, v_cnt;
+  logic [8:0] show_x, show_y;
+  logic [8:0] which_x, rendering_x;
 
   always_comb // rescale for render @ 320*240
   begin
@@ -31,18 +29,18 @@ module top(
     which_x = (v_blank) ? rendering_x : show_x ;
   end
 
-  // location
+  // ray/player location map_hit chk/probe 
   logic [15:0] player_x, player_y;
   logic [7:0] rendering_angle;
-  logic [3:0] location_chk_x, location_chk_y;
+  logic [3:0] hit_chk_x, hit_chk_y;
+  logic [3:0] probe_x, probe_y;
+
   // comm flag
   logic map_hit, start_ray, ray_done, hit_side;
+  
   // temp wire
   logic [15:0] finalDist, renderDist;
 
-
-
-  // Frequency Divider
   clock_divisor clk_wiz_0_inst(
                   .clk(clk),
                   .clk1(clk_25MHz),
@@ -54,17 +52,20 @@ module top(
            .player_y_out(player_y),
            .ray_angle_out(rendering_angle),
            .rendering_x(which_x),           // scanner in
-           .btn_up(),                       // camera controls
-           .btn_down(),
-           .btn_left(),
-           .btn_right(),
+           .probe_x(probe_x),               // map_hit probe
+           .probe_y(probe_y),
+           .map_hit(map_hit),
+           .btn_up(btnU),                       // camera controls
+           .btn_down(btnD),
+           .btn_left(btnL),
+           .btn_right(btnR),
            .clk(clk),
            .rst_n(rst_n)
          );
 
   map_rom map_inst(
-            .map_x(location_chk_x),
-            .map_y(location_chk_y),
+            .map_x((v_blank)? hit_chk_x : probe_x),
+            .map_y((v_blank)? hit_chk_y : probe_y),
             .map_hit(map_hit),
             .clk(clk),
             .rst_n(rst_n)
@@ -74,8 +75,8 @@ module top(
                   .player_x(player_x),  // camera
                   .player_y(player_y),
                   .ray_angle(rendering_angle),
-                  .map_x_out(location_chk_x), // map
-                  .map_y_out(location_chk_y),
+                  .map_x_out(hit_chk_x), // map
+                  .map_y_out(hit_chk_y),
                   .map_hit(map_hit),
                   .start_ray(start_ray), // scanner
                   .ray_done(ray_done),
@@ -95,7 +96,7 @@ module top(
               );
 
   dda_scanner dda_scanner_inst(
-                .rendering_x(rendering_x),   // -> camera -> raycaster
+                .rendering_x(rendering_x),   // -> camera/buffer -> raycaster
                 .ray_done(ray_done),
                 .start_ray(start_ray),
                 .write_enable(write_enable),  // buffer
