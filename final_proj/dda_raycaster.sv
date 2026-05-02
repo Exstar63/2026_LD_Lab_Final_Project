@@ -35,13 +35,13 @@ module dda_raycaster(
   logic [15:0] sideDistX_next, sideDistY_next;
   logic [15:0] deltaDistX, deltaDistY;
   logic [15:0] deltaDistX_next, deltaDistY_next;
-  logic [3:0]  map_x, map_y;
-  logic [3:0]  map_x_next, map_y_next;
+  logic [3:0] map_x, map_y;
+  logic [3:0] map_x_next, map_y_next;
   logic signed [1:0] step_x, step_y; // +1 or -1
   logic signed [1:0] step_x_next, step_y_next;
   logic hit_side_next;
   logic [15:0] finalDist_next;
-  logic        ray_done_next;
+  logic ray_done_next;
 
   // DistX/Y inv trig rom
   logic [15:0] rom_deltaX, rom_deltaY;

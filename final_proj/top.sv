@@ -29,17 +29,20 @@ module top(
     which_x = (v_blank) ? rendering_x : show_x ;
   end
 
-  // ray/player location map_hit chk/probe 
+  // ray/player location map_hit chk/probe
   logic [15:0] player_x, player_y;
   logic [7:0] rendering_angle;
   logic [3:0] hit_chk_x, hit_chk_y;
   logic [3:0] probe_x, probe_y;
 
   // comm flag
-  logic map_hit, start_ray, ray_done, hit_side, write_enable;
-  
-  // temp wire
+  logic map_hit, start_ray, ray_done, write_enable;
+
+  logic [16:0] buff_in_packet, buff_out_packet;
   logic [15:0] finalDist, renderDist;
+  logic hit_side, hit_side_buff;
+  assign buff_in_packet = {hit_side, finalDist};
+  assign buff_out_packet = {hit_side_buff, renderDist};
 
   clock_divisor clk_wiz_0_inst(
                   .clk(clk),
@@ -87,11 +90,11 @@ module top(
                 );
 
   dist_buffer dist_buffer_mem(
-                .write_enable(write_enable),   // scanner in
+                .write_enable(write_enable),    // scanner in
                 .write_addr(rendering_x),
-                .write_data(finalDist),        // dda_raycaster in
-                .read_addr(show_x),        // vga_ctrl in
-                .read_data(renderDist),     // renderer out
+                .write_data(buff_in_packet),  // dda_raycaster in
+                .read_addr(show_x),             // vga_ctrl in
+                .read_data(buff_out_packet),  // renderer out
                 .clk(clk)
               );
 
@@ -109,7 +112,7 @@ module top(
              .vga_rgb(pixel),
              .show_y(show_y),
              .wall_dist(renderDist),
-             .hit_side(hit_side),
+             .hit_side(hit_side_buff),
              .clk(clk),
              .rst_n(rst_n)
            );
