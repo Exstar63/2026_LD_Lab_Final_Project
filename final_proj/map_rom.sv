@@ -33,15 +33,12 @@ module map_rom (
                 1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1,
                 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1,
               };
-    // A '1' is a wall, a '0' is empty space
     // $readmemb("map_data.mem", world_map);
   end
 
   always_ff @(posedge clk)
   begin
-    // Concatenate Y and X to form the 8-bit address
-    // Assuming Y is the row and X is the column
-    hit <= world_map[{map_y, map_x}];
+    hit <= world_map[{map_y, map_x}]; // {Y,X} -> {row,col}
   end
 
 endmodule

@@ -1,21 +1,22 @@
 module dda_raycaster (
-    input  logic        clk,
-    input  logic        rst_n,
+    input  logic clk,
+    input  logic rst_n,
 
     // camera comm
     input  logic [15:0] player_x,
     input  logic [15:0] player_y,
-    input  logic [7:0]  ray_angle,
-    input  logic        start_ray, // Pulses high when rendering_x changes
+    input  logic [7:0] ray_angle,
+    input  logic start_ray, // high when rendering_x changes
 
-    // Map comms
-    output logic [3:0]  map_x_out,
-    output logic [3:0]  map_y_out,
-    input  logic        map_hit,   // 1 if wall, 0 if empty
+    // map comms
+    output logic [3:0] map_x_out,
+    output logic [3:0] map_y_out,
+    input  logic map_hit,   // 1 if wall, 0 if empty
 
-    // Outputs to the Renderer
+    // scanner / buffer / render comm
     output logic [15:0] finalDist,
-    output logic        ray_done
+    output logic ray_done
+    output logic hit_side,
   );
 
   typedef enum logic [2:0] {
@@ -38,7 +39,7 @@ module dda_raycaster (
   logic [3:0]  map_x_next, map_y_next;
   logic signed [1:0] step_x, step_y; // +1 or -1
   logic signed [1:0] step_x_next, step_y_next;
-  logic hit_side; // 0 for vertical wall (X), 1 for horizontal wall (Y)
+  // 0 for vertical wall (X), 1 for horizontal wall (Y)
   logic hit_side_next;
   logic [15:0] finalDist_next;
   logic        ray_done_next;
@@ -167,7 +168,7 @@ module dda_raycaster (
     endcase
   end
 
-  always_ff @(posedge clk, negedge rst_n)
+  always_ff @(posedge clk)
     if (~rst_n)
     begin
       state <= IDLE;

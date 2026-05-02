@@ -1,6 +1,6 @@
-module player_camera (
+module camera (
     input  logic        clk,
-    input  logic        rst,
+    input  logic        rst_n,
 
     // temp input
     input  logic        btn_up,
@@ -8,7 +8,7 @@ module player_camera (
     input  logic        btn_left,
     input  logic        btn_right,
 
-    input  logic [8:0]  rendering_x, // 0~319 wires h_cnt>>1 (index/2)
+    input  logic [8:0]  rendering_x, // 0~319 wires rendering_x >>1 (index/2)
 
     // Outputs to raycaseter
     output logic [15:0] player_x_out,
@@ -33,12 +33,10 @@ module player_camera (
   end
 
 
-  always_ff @(posedge clk)
-  begin
-    if (rst)
+  always_ff @(posedge clk) // sync read for map rom
+    if (~rst_n)
     begin
-      // Spawn @ grid (1,1) facing 0 degrees
-      p_x     <= 16'h0180;
+      p_x     <= 16'h0180; // Spawn @ grid (1,1) facing 0 degrees
       p_y     <= 16'h0180;
       p_angle <= 8'd0;
     end
@@ -52,11 +50,8 @@ module player_camera (
       // your VGA v_sync) and only move the player when it pulses.
       // ---------------------------------------------------------
     end
-  end
 
-
-
-  // FOV ray calculation
+  // FOV ray calculation -> renderer comm
   logic signed [9:0]  shift_x;
   logic signed [15:0] temp_x;
   logic [7:0]         del_angle;
