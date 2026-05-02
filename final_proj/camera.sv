@@ -22,13 +22,14 @@ module camera(
     // raycaseter comm
     output logic [15:0] player_x_out,
     output logic [15:0] player_y_out,
-    output logic [7:0] ray_angle_out
+    output logic [7:0] ray_angle_out,
+    output logic [7:0] del_angle
   );
 
   // FOV ray calculation -> renderer comm
   logic signed [9:0]  shift_x;
   logic signed [15:0] temp_x;
-  logic [7:0] p_angle, del_angle;
+  logic [7:0] p_angle;
   always_comb
   begin
     shift_x = $signed({1'b0, rendering_x}) - 10'sd160; // shift render coord (0~320) -> (-160~159)

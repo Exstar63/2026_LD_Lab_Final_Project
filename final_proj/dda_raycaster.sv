@@ -6,6 +6,7 @@ module dda_raycaster(
     input  logic [15:0] player_x,
     input  logic [15:0] player_y,
     input  logic [7:0] ray_angle,
+    input  logic [7:0] del_angle,
 
     // map comms
     output logic [3:0] map_x_out,

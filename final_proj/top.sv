@@ -31,7 +31,7 @@ module top(
 
   // ray/player location map_hit chk/probe
   logic [15:0] player_x, player_y;
-  logic [7:0] rendering_angle;
+  logic [7:0] rendering_angle, del_angle;
   logic [3:0] hit_chk_x, hit_chk_y;
   logic [3:0] probe_x, probe_y;
 
@@ -54,6 +54,7 @@ module top(
            .player_x_out(player_x),         // raycaster
            .player_y_out(player_y),
            .ray_angle_out(rendering_angle),
+           .del_angle(del_angle),
            .rendering_x(which_x),           // scanner in
            .probe_x(probe_x),               // map_hit probe
            .probe_y(probe_y),
@@ -78,6 +79,7 @@ module top(
                   .player_x(player_x),  // camera
                   .player_y(player_y),
                   .ray_angle(rendering_angle),
+                  .del_angle(del_angle),
                   .map_x_out(hit_chk_x), // map
                   .map_y_out(hit_chk_y),
                   .map_hit(map_hit),
