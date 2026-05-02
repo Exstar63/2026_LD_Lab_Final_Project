@@ -1,6 +1,6 @@
 module top(
     input logic clk,
-    input logic rst,
+    input logic rst_n,
     input logic btnU,btnD,btnL,btnR,
     output logic [3:0] vgaRed,
     output logic [3:0] vgaGreen,
@@ -36,7 +36,7 @@ module top(
   logic [3:0] probe_x, probe_y;
 
   // comm flag
-  logic map_hit, start_ray, ray_done, hit_side;
+  logic map_hit, start_ray, ray_done, hit_side, write_enable;
   
   // temp wire
   logic [15:0] finalDist, renderDist;
@@ -91,7 +91,7 @@ module top(
                 .write_addr(rendering_x),
                 .write_data(finalDist),        // dda_raycaster in
                 .read_addr(show_x),        // vga_ctrl in
-                .read_data(renderDist)     // renderer out
+                .read_data(renderDist),     // renderer out
                 .clk(clk)
               );
 
@@ -106,7 +106,7 @@ module top(
               );
 
   renderer render_inst(
-             .vga_rgb(pixel)
+             .vga_rgb(pixel),
              .show_y(show_y),
              .wall_dist(renderDist),
              .hit_side(hit_side),
@@ -117,7 +117,7 @@ module top(
   // Render the picture by VGA controller
   vga_controller vga_inst(
                    .pclk(clk_25MHz),
-                   .reset(rst),
+                   .reset(~rst_n),
                    .hsync(hsync),
                    .vsync(vsync),
                    .valid(valid),
