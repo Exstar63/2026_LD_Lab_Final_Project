@@ -16,7 +16,7 @@ module dda_raycaster(
     input  logic start_ray, // scanner control 
     output logic ray_done,
     output logic [15:0] finalDist,
-    output logic hit_side
+    output logic hit_side   // 0 for vertical wall (X), 1 for horizontal wall (Y)
   );
 
   typedef enum logic [2:0] {
@@ -39,7 +39,6 @@ module dda_raycaster(
   logic [3:0]  map_x_next, map_y_next;
   logic signed [1:0] step_x, step_y; // +1 or -1
   logic signed [1:0] step_x_next, step_y_next;
-  // 0 for vertical wall (X), 1 for horizontal wall (Y)
   logic hit_side_next;
   logic [15:0] finalDist_next;
   logic        ray_done_next;
