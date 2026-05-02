@@ -1,8 +1,8 @@
 module dda_raycaster (
     input  logic        clk,
-    input  logic        rst,
+    input  logic        rst_n,
 
-    // Inputs from PlayerCam
+    // camera comm
     input  logic [15:0] player_x,
     input  logic [15:0] player_y,
     input  logic [7:0]  ray_angle,
@@ -18,8 +18,6 @@ module dda_raycaster (
     output logic        ray_done
   );
 
-  // pipelined dda raycaster algo
-  // FSM State Definition
   typedef enum logic [2:0] {
             IDLE      = 3'd0,
             INIT_1    = 3'd1,
@@ -30,19 +28,17 @@ module dda_raycaster (
             CALC_DIST = 3'd6
           } state_t;
 
-  state_t state, next_state;
-
   // DDA reg (q8.8)
+  state_t state, next_state;
   logic [15:0] sideDistX, sideDistY;
-  logic [15:0] deltaDistX, deltaDistY;
-  logic [3:0]  map_x, map_y;
-  logic signed [1:0] step_x, step_y; // +1 or -1
-  logic hit_side; // 0 for vertical wall (X), 1 for horizontal wall (Y)
-
   logic [15:0] sideDistX_next, sideDistY_next;
+  logic [15:0] deltaDistX, deltaDistY;
   logic [15:0] deltaDistX_next, deltaDistY_next;
+  logic [3:0]  map_x, map_y;
   logic [3:0]  map_x_next, map_y_next;
+  logic signed [1:0] step_x, step_y; // +1 or -1
   logic signed [1:0] step_x_next, step_y_next;
+  logic hit_side; // 0 for vertical wall (X), 1 for horizontal wall (Y)
   logic hit_side_next;
   logic [15:0] finalDist_next;
   logic        ray_done_next;
@@ -62,35 +58,8 @@ module dda_raycaster (
   begin
     ray_right = (ray_angle < 8'd64) || (ray_angle >= 8'd192);
     ray_up = (ray_angle > 8'd0) && (ray_angle < 8'd128);
-  end
-
-  assign map_x_out = map_x;
-  assign map_y_out = map_y;
-
-  // State Machine Sequential Block
-  always_ff @(posedge clk)
-  begin
-    if (rst)
-    begin
-      state <= IDLE;
-      ray_done <= 1'b0;
-      hit_side <= 1'b0;
-    end
-    else
-    begin
-      state <= next_state;
-      sideDistX <= sideDistX_next;
-      sideDistY <= sideDistY_next;
-      deltaDistX <= deltaDistX_next;
-      deltaDistY <= deltaDistY_next;
-      finalDist <= finalDist_next;
-      hit_side <= hit_side_next;
-      map_x <= map_x_next;
-      map_y <= map_y_next;
-      step_x <= step_x_next;
-      step_y <= step_y_next;
-      ray_done <= ray_done_next;
-    end
+    map_x_out = map_x;
+    map_y_out = map_y;
   end
 
   // FSM
@@ -115,8 +84,7 @@ module dda_raycaster (
         ray_done_next = 1'b0;
         if (start_ray)
         begin
-          // Grab the integer grid coordinates (top 8 bits)
-          map_x_next = player_x[15:8];
+          map_x_next = player_x[15:8]; // camera coord
           map_y_next = player_y[15:8];
           next_state = INIT_1;
         end
@@ -131,31 +99,25 @@ module dda_raycaster (
 
       INIT_2:
       begin
-        // Setup X direction and initial side distance
-        if (ray_right)
+        if (ray_right) // X dir
         begin
-          step_x_next = 2'sd1;
-          // (1.0 - fraction) * deltaDistX
+          step_x_next = 2'sd1; // (1.0 - fraction) * deltaDistX
           sideDistX_next = ((9'd256 - player_x[7:0]) * deltaDistX) >> 8;
         end
         else
         begin
-          step_x_next = -2'sd1;
-          // fraction * deltaDistX
+          step_x_next = -2'sd1; // fraction * deltaDistX
           sideDistX_next = (player_x[7:0] * deltaDistX) >> 8;
         end
 
-        // Setup Y direction and initial side distance
-        if (ray_up)
+        if (ray_up)  // Y dir
         begin
-          step_y_next = 2'sd1;
-          // (1.0 - fraction) * deltaDistY
+          step_y_next = 2'sd1; // (1.0 - fraction) * deltaDistY
           sideDistY_next = ((9'd256 - player_y[7:0]) * deltaDistY) >> 8;
         end
         else
         begin
-          step_y_next = -2'sd1;
-          // fraction * deltaDistY
+          step_y_next = -2'sd1; // fraction * deltaDistY
           sideDistY_next = (player_y[7:0] * deltaDistY) >> 8;
         end
         next_state = STEP;
@@ -163,20 +125,17 @@ module dda_raycaster (
 
       STEP:
       begin
-        if (sideDistX < sideDistY)
+        if (sideDistX < sideDistY) // X mov
         begin
-          // Move along X axis
           sideDistX_next = sideDistX + deltaDistX;
-          // Cast step_x to 4 bits to safely add to the 4-bit map_x
           map_x_next = map_x + 4'(step_x);
-          hit_side_next = 1'b0; // 0 means an X-aligned (vertical) wall
+          hit_side_next = 1'b0; // 0 = X(ver) wall
         end
-        else
+        else // Y mov
         begin
-          // Move along Y axis
           sideDistY_next = sideDistY + deltaDistY;
           map_y_next = map_y + 4'(step_y);
-          hit_side_next = 1'b1; // 1 means a Y-aligned (horizontal) wall
+          hit_side_next = 1'b1; // 1 = Y(hor) wall
         end
         next_state = MEM_WAIT;
       end
@@ -207,5 +166,28 @@ module dda_raycaster (
       end
     endcase
   end
+
+  always_ff @(posedge clk, negedge rst_n)
+    if (~rst_n)
+    begin
+      state <= IDLE;
+      ray_done <= 1'b0;
+      hit_side <= 1'b0;
+    end
+    else
+    begin
+      state <= next_state;
+      sideDistX <= sideDistX_next;
+      sideDistY <= sideDistY_next;
+      deltaDistX <= deltaDistX_next;
+      deltaDistY <= deltaDistY_next;
+      finalDist <= finalDist_next;
+      hit_side <= hit_side_next;
+      map_x <= map_x_next;
+      map_y <= map_y_next;
+      step_x <= step_x_next;
+      step_y <= step_y_next;
+      ray_done <= ray_done_next;
+    end
 
 endmodule
