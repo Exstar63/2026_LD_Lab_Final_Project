@@ -12,7 +12,7 @@ module camera(
     input logic btn_right,
 
     // map_rom probe (edge detection)
-    output logic [3:0] probe_x, 
+    output logic [3:0] probe_x,
     output logic [3:0] probe_y,
     input logic map_hit,
 
@@ -23,26 +23,33 @@ module camera(
     output logic [15:0] player_x_out,
     output logic [15:0] player_y_out,
     output logic [7:0] ray_angle_out,
-    output logic [7:0] del_angle
+    output logic [15:0] corr_coef
   );
 
   // FOV ray calculation -> renderer comm
   logic signed [9:0]  shift_x;
   logic signed [15:0] temp_x;
-  logic [7:0] p_angle;
+  logic [7:0] p_angle, del_angle;
   always_comb
   begin
     shift_x = $signed({1'b0, rendering_x}) - 10'sd160; // shift render coord (0~320) -> (-160~159)
-    temp_x = shift_x * 16'sd51;
-    del_angle = temp_x[15:8];   // *0.2=51/256=0.199
-    ray_angle_out = p_angle + del_angle;
+    temp_x = shift_x * 16'sd51; // *0.2=51/256=0.199
   end
 
-  // mov state regs
-  logic [15:0] p_x, p_y, d_x, d_y;
-  logic [15:0] p_x_next, p_y_next;
-  logic [15:0] sin_val, cos_val;
-  logic [7:0] p_angle_next;
+  always_ff @(posedge clk)
+    if (~rst_n)
+    begin
+      del_angle <= 8'd0;
+      ray_angle_out <= 8'd0;
+    end
+    else
+    begin
+      del_angle <= temp_x[15:8];
+      ray_angle_out <= p_angle + temp_x[15:8];
+    end
+
+  // fish eye correction -> raycaster
+  trig_rom corr_coef_mem(.angle(del_angle),.clk(clk),.cos_out(corr_coef),.sin_out());
 
   // mov const
   localparam logic [15:0] MOVE_SPEED = 16'h0010;  // ~0.1 units in Q8.8
@@ -53,6 +60,11 @@ module camera(
     v_blank_prev <= v_blank;
   assign frame_tick = (v_blank && !v_blank_prev);
 
+  // mov state regs
+  logic [15:0] p_x, p_y, d_x, d_y;
+  logic [15:0] p_x_next, p_y_next;
+  logic [15:0] sin_val, cos_val;
+  logic [7:0] p_angle_next;
   trig_rom trig_mem(.sin_out(sin_val),.cos_out(cos_val),.angle(p_angle),.clk(clk));
   q88_mult cos_mult_inst(.a(cos_val),.b(MOVE_SPEED),.out(d_x));
   q88_mult sin_mult_inst(.a(sin_val),.b(MOVE_SPEED),.out(d_y));
@@ -73,7 +85,7 @@ module camera(
   begin
     if (~rst_n)
     begin
-      p_x <= 16'h0180; // init @ center of grid (1,1)
+      p_x <= 16'h0180;     // init @ center of grid (1,1)
       p_y <= 16'h0180;
       p_angle <= 8'd0;     // init facing 0 deg
     end

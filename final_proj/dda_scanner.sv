@@ -12,11 +12,12 @@ module dda_scanner(
     output logic        write_enable
   );
 
-  typedef enum logic [1:0] {
-            WAIT_FRAME = 2'd0,
-            START_DDA  = 2'd1,
-            WAIT_DDA   = 2'd2,
-            NEXT_RAY   = 2'd3
+  typedef enum logic [2:0] {
+            WAIT_FRAME = 3'd0,
+            PREP_DDA   = 3'd1,
+            START_DDA  = 3'd2,
+            WAIT_DDA   = 3'd3,
+            NEXT_RAY   = 3'd4
           } state_t;
 
   state_t state, state_next;
@@ -37,6 +38,9 @@ module dda_scanner(
         if (v_blank)
           state_next = START_DDA;
       end
+
+      PREP_DDA:
+        state_next = START_DDA;  // wait for corr_coef rom
 
       START_DDA:
       begin
@@ -62,7 +66,7 @@ module dda_scanner(
         else
         begin
           ray_count_next = ray_count + 1'b1;
-          state_next = START_DDA;
+          state_next = PREP_DDA;
         end
       end
 

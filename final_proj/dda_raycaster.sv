@@ -6,7 +6,7 @@ module dda_raycaster(
     input  logic [15:0] player_x,
     input  logic [15:0] player_y,
     input  logic [7:0] ray_angle,
-    input  logic [7:0] del_angle,
+    input  logic [15:0] corr_coef,
 
     // map comms
     output logic [3:0] map_x_out,
@@ -42,6 +42,7 @@ module dda_raycaster(
   logic signed [1:0] step_x_next, step_y_next;
   logic hit_side_next;
   logic [15:0] finalDist_next;
+  logic [31:0] finalDist_temp; 
   logic ray_done_next;
 
   // DistX/Y inv trig rom
@@ -142,7 +143,7 @@ module dda_raycaster(
       end
 
       MEM_WAIT:
-        next_state = CHECK_HIT; // timeholder wait for ROM output
+        next_state = CHECK_HIT; // timeholder wait for map ROM output
 
       CHECK_HIT:
       begin
@@ -156,12 +157,13 @@ module dda_raycaster(
       begin
         if (hit_side)  // y-wall
         begin
-          finalDist_next = sideDistY - deltaDistY;
+          finalDist_temp = (sideDistY - deltaDistY) * corr_coef;
         end
         else           // x-wall
         begin
-          finalDist_next = sideDistX - deltaDistX;
+          finalDist_temp = (sideDistX - deltaDistX) * corr_coef;
         end
+        finalDist_next = finalDist_temp[23:8] ;
         ray_done_next = 1'b1; // col ready flag
         next_state = IDLE;
       end
