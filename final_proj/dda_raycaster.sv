@@ -14,7 +14,7 @@ module dda_raycaster(
     input  logic map_hit,   // 1 if wall, 0 if empty
 
     // scanner / buffer / render comm
-    input  logic start_ray, // scanner control 
+    input  logic start_ray, // scanner control
     output logic ray_done,
     output logic [15:0] finalDist,
     output logic hit_side   // 0 for vertical wall (X), 1 for horizontal wall (Y)
@@ -42,7 +42,7 @@ module dda_raycaster(
   logic signed [1:0] step_x_next, step_y_next;
   logic hit_side_next;
   logic [15:0] finalDist_next;
-  logic [31:0] finalDist_temp; 
+  logic [31:0] finalDist_temp;
   logic ray_done_next;
 
   // DistX/Y inv trig rom
@@ -103,24 +103,24 @@ module dda_raycaster(
       begin
         if (ray_right) // X dir
         begin
-          step_x_next = 2'sd1; // (1.0 - fraction) * deltaDistX
-          sideDistX_next = ((9'd256 - player_x[7:0]) * deltaDistX) >> 8;
+          step_x_next = 2'sd1;
+          sideDistX_next = (32'(9'd256 - player_x[7:0]) * deltaDistX) >> 8;
         end
         else
         begin
-          step_x_next = -2'sd1; // fraction * deltaDistX
-          sideDistX_next = (player_x[7:0] * deltaDistX) >> 8;
+          step_x_next = -2'sd1;
+          sideDistX_next = (32'(player_x[7:0]) * deltaDistX) >> 8;
         end
 
-        if (ray_up)  // Y dir
+        if (ray_up) // Y dir
         begin
-          step_y_next = 2'sd1; // (1.0 - fraction) * deltaDistY
-          sideDistY_next = ((9'd256 - player_y[7:0]) * deltaDistY) >> 8;
+          step_y_next = 2'sd1;
+          sideDistY_next = (32'(9'd256 - player_y[7:0]) * deltaDistY) >> 8;
         end
         else
         begin
-          step_y_next = -2'sd1; // fraction * deltaDistY
-          sideDistY_next = (player_y[7:0] * deltaDistY) >> 8;
+          step_y_next = -2'sd1;
+          sideDistY_next = (32'(player_y[7:0]) * deltaDistY) >> 8;
         end
         next_state = STEP;
       end
