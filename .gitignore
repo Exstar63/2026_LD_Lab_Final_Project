@@ -4,4 +4,5 @@ final_proj/final_proj.ip_user_files/*
 final_proj/final_proj.runs/*
 final_proj/final_proj.sim/*
 final_proj/final_proj.xpr
+final_proj/vivado*
 proj_test/*
