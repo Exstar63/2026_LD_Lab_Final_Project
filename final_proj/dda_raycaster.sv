@@ -127,7 +127,7 @@ module dda_raycaster(
 
       STEP:
       begin
-        if (sideDistX < sideDistY) // X mov
+        if (sideDistX <= sideDistY) // X mov
         begin
           sideDistX_next = sideDistX + deltaDistX;
           map_x_next = map_x + 4'(step_x);

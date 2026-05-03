@@ -1,7 +1,7 @@
 module renderer(
     input logic clk,
     input logic rst_n,
-    input logic [8:0] show_y,   // internal_y (0-239)
+    input logic [8:0] show_y,   // show_y (0-239)
 
     // dist_buffer comm
     input logic [15:0] wall_dist,    // From Distance Buffer
@@ -24,8 +24,8 @@ module renderer(
 
   always_comb
   begin
-    lut_index = (wall_dist[15:12] != 4'd0)? 10'h3FF : wall_dist[11:2];
-    lut_height = height_rom[lut_index];
+    // lut_index = (wall_dist[15:12] != 4'd0)? 10'h3FF : wall_dist[11:2];
+    lut_height = height_rom[wall_dist[11:2]];
     next_wall_top = 8'd120 - (lut_height >> 1);
     next_wall_bottom = 8'd120 + (lut_height >> 1);
     if (show_y < next_wall_top)
