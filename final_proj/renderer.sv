@@ -5,7 +5,7 @@ module renderer(
 
     // dist_buffer comm
     input logic [15:0] wall_dist,    // From Distance Buffer
-    
+
     // dda_raycaster comm
     input logic hit_side,            // From DDA (0=X-wall, 1=Y-wall)
     output logic [11:0] vga_rgb
@@ -19,24 +19,20 @@ module renderer(
   end
 
   logic [9:0] lut_index;
-  logic [7:0] lut_height, next_wall_top, next_wall_bottom;
-  logic [11:0] next_rgb;
+  logic [7:0] lut_height, wall_top_next, wall_bottom_next;
+  logic [11:0] rgb_next;
 
   always_comb
   begin
-    // lut_index = (wall_dist[15:12] != 4'd0)? 10'h3FF : wall_dist[11:2];
     lut_height = height_rom[wall_dist[11:2]];
-    next_wall_top = 8'd120 - (lut_height >> 1);
-    next_wall_bottom = 8'd120 + (lut_height >> 1);
-    if (show_y < next_wall_top)
-      next_rgb = 12'h222; // ceil
-    else if (show_y > next_wall_bottom)
-      next_rgb = 12'h444; // floor
+    wall_top_next = 8'd120 - (lut_height >> 1);
+    wall_bottom_next = 8'd120 + (lut_height >> 1);
+    if (show_y < wall_top_next)
+      rgb_next = 12'h222; // ceil
+    else if (show_y > wall_bottom_next)
+      rgb_next = 12'h444; // floor
     else
-      if (hit_side)
-        next_rgb = 12'h008; // wall Y
-      else
-        next_rgb = 12'h00F; // wall X
+      rgb_next = (hit_side)? 12'h008 : 12'h00F; // Y/X
   end
 
   always_ff @(posedge clk)  // sync color output
@@ -44,7 +40,7 @@ module renderer(
     if (~rst_n)
       vga_rgb <= 12'h000;
     else
-      vga_rgb <= next_rgb;
+      vga_rgb <= rgb_next;
   end
 
 endmodule

@@ -9,13 +9,13 @@ module top(
     output logic vsync
   );
 
+  // vga control flags
   logic clk_25MHz;
-  logic clk_22;
   logic [11:0] pixel;
   logic valid;
   logic v_blank;
 
-  assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel:12'h0;
+  assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel : 12'h0;
 
   // pixel hit control
   logic [9:0] h_cnt, v_cnt;
@@ -39,6 +39,7 @@ module top(
   // comm flag
   logic map_hit, start_ray, ray_done, write_enable;
 
+  // buffer packet
   logic [16:0] buff_in_packet, buff_out_packet;
   logic [15:0] finalDist, renderDist;
   logic hit_side, hit_side_buff;
@@ -48,7 +49,7 @@ module top(
   clock_divisor clk_wiz_0_inst(
                   .clk(clk),
                   .clk1(clk_25MHz),
-                  .clk22(clk_22)
+                  .clk22()
                 );
 
   camera cam_inst(

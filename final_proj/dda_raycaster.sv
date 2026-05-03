@@ -31,7 +31,7 @@ module dda_raycaster(
           } state_t;
 
   // DDA reg (q8.8)
-  state_t state, next_state;
+  state_t state, state_next;
   logic [15:0] sideDistX, sideDistY;
   logic [15:0] sideDistX_next, sideDistY_next;
   logic [15:0] deltaDistX, deltaDistY;
@@ -67,7 +67,7 @@ module dda_raycaster(
   // FSM
   always_comb
   begin
-    next_state = state;
+    state_next = state;
     sideDistX_next = sideDistX;
     sideDistY_next = sideDistY;
     deltaDistX_next = deltaDistX;
@@ -88,7 +88,7 @@ module dda_raycaster(
         begin
           map_x_next = player_x[15:8]; // camera coord
           map_y_next = player_y[15:8];
-          next_state = INIT_1;
+          state_next = INIT_1;
         end
       end
 
@@ -96,7 +96,7 @@ module dda_raycaster(
       begin
         deltaDistX_next = rom_deltaX;
         deltaDistY_next = rom_deltaY;
-        next_state = INIT_2;
+        state_next = INIT_2;
       end
 
       INIT_2:
@@ -122,7 +122,7 @@ module dda_raycaster(
           step_y_next = -2'sd1;
           sideDistY_next = (32'(player_y[7:0]) * deltaDistY) >> 8;
         end
-        next_state = STEP;
+        state_next = STEP;
       end
 
       STEP:
@@ -139,33 +139,26 @@ module dda_raycaster(
           map_y_next = map_y + 4'(step_y);
           hit_side_next = 1'b1; // 1 = Y(hor) wall
         end
-        next_state = MEM_WAIT;
+        state_next = MEM_WAIT;
       end
 
       MEM_WAIT:
-        next_state = CHECK_HIT; // timeholder wait for map ROM output
+        state_next = CHECK_HIT; // timeholder wait for map ROM output
 
       CHECK_HIT:
       begin
         if (map_hit)
-          next_state = CALC_DIST;
+          state_next = CALC_DIST;
         else
-          next_state = STEP;
+          state_next = STEP;
       end
 
       CALC_DIST:
       begin
-        if (hit_side)  // y-wall
-        begin
-          finalDist_temp = (sideDistY - deltaDistY) * corr_coef;
-        end
-        else           // x-wall
-        begin
-          finalDist_temp = (sideDistX - deltaDistX) * corr_coef;
-        end
+        finalDist_temp = ((hit_side)? (sideDistY - deltaDistY) : (sideDistX - deltaDistX)) * corr_coef;
         finalDist_next = finalDist_temp[23:8] ;
         ray_done_next = 1'b1; // col ready flag
-        next_state = IDLE;
+        state_next = IDLE;
       end
     endcase
   end
@@ -179,7 +172,7 @@ module dda_raycaster(
     end
     else
     begin
-      state <= next_state;
+      state <= state_next;
       sideDistX <= sideDistX_next;
       sideDistY <= sideDistY_next;
       deltaDistX <= deltaDistX_next;
