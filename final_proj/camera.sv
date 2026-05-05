@@ -52,8 +52,8 @@ module camera(
   trig_rom corr_coef_mem(.angle(del_angle),.clk(clk),.cos_out(corr_coef),.sin_out());
 
   // mov const
-  localparam logic [15:0] MOVE_SPEED = 16'h0010;  // ~0.1 units in Q8.8
-  localparam logic [7:0] TURN_SPEED = 8'd2;       // 2 BAM steps
+  localparam logic [15:0] MOVE_SPEED = 16'h0008;  // ~0.1 units in Q8.8
+  localparam logic [7:0] TURN_SPEED = 8'd3;       // 2 BAM steps
 
   logic frame_tick, v_blank_prev;
   always_ff @(posedge clk)
