@@ -61,6 +61,7 @@ module dda_scanner(
       begin
         if (ray_count == 9'd319)
         begin
+          ray_count_next = 9'd0;
           state_next = WAIT_FRAME;
         end
         else

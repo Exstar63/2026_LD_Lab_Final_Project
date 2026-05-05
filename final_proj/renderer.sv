@@ -11,6 +11,7 @@ module renderer(
     output logic [11:0] vga_rgb
   );
 
+  (* ram_style = "block" *)
   logic [7:0] height_rom [0:1023];
 
   initial
