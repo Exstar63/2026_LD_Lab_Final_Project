@@ -80,12 +80,7 @@ module dda_raycaster(
       hit_coord = {16'b0, player_x} + ((32'(rawDist) * rayDirX) >> 8);
     else
       hit_coord = {16'b0, player_y} + ((32'(rawDist) * rayDirY) >> 8);
-
-    /*  exact_hit_coord = hit_coord[15:0];
-        wallX_fraction = exact_hit_coord[7:0];
-        tex_x = wallX_fraction[7:2]; */
-
-    tex_x = hit_coord[7:2];  // rescaling to 64*64 (texture size)
+    tex_x = hit_coord[7:2];  // rescaling fraction to 64*64 (texture size)
     if (hit_side == 0 && rayDirX[15])       // flip x wall
       tex_x_out_temp = 6'd63 - tex_x;
     else if (hit_side == 1 && !rayDirY[15]) // filp y wall
