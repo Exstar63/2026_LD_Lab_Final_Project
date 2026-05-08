@@ -41,7 +41,7 @@ module top(
   logic map_hit, start_ray, ray_done, write_enable;
 
   // buffer packet
-  logic [16:0] buff_in_packet, buff_out_packet;
+  logic [22:0] buff_in_packet, buff_out_packet;
   logic [15:0] finalDist, renderDist;
   logic [5:0] tex_x, tex_x_buff;
   logic hit_side, hit_side_buff;
