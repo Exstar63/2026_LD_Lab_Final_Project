@@ -5,9 +5,8 @@ module renderer(
 
     // dist_buffer comm
     input logic [15:0] wall_dist,    // From Distance Buffer
-
-    // dda_raycaster comm
-    input logic hit_side,            // From DDA (0=X-wall, 1=Y-wall)
+    input logic [5:0] tex_x,
+    input logic hit_side,
     output logic [11:0] vga_rgb
   );
 
