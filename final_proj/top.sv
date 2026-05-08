@@ -32,6 +32,7 @@ module top(
   // ray/player location map_hit chk/probe
   logic [15:0] player_x, player_y;
   logic [7:0] rendering_angle;
+  logic [15:0] rayDirX, rayDirY;
   logic [3:0] hit_chk_x, hit_chk_y;
   logic [3:0] probe_x, probe_y;
   logic [15:0] corr_coef; 
@@ -42,9 +43,10 @@ module top(
   // buffer packet
   logic [16:0] buff_in_packet, buff_out_packet;
   logic [15:0] finalDist, renderDist;
+  logic [5:0] tex_x, tex_x_buff;
   logic hit_side, hit_side_buff;
-  assign buff_in_packet = {hit_side, finalDist};
-  assign buff_out_packet = {hit_side_buff, renderDist};
+  assign buff_in_packet = {hit_side, tex_x, finalDist};
+  assign buff_out_packet = {hit_side_buff, tex_x_buff, renderDist};
 
   clock_divisor clk_wiz_0_inst(
                   .clk(clk),
@@ -56,6 +58,8 @@ module top(
            .player_x_out(player_x),         // raycaster
            .player_y_out(player_y),
            .ray_angle_out(rendering_angle),
+           .rayDirX_out(rayDirX),
+           .rayDirY_out(rayDirY),
            .corr_coef(corr_coef),
            .rendering_x(which_x),           // scanner in
            .probe_x(probe_x),               // map_hit probe
@@ -81,6 +85,8 @@ module top(
                   .player_x(player_x),  // camera
                   .player_y(player_y),
                   .ray_angle(rendering_angle),
+                  .rayDirX(rayDirX),
+                  .rayDirY(rayDirY),
                   .corr_coef(corr_coef),
                   .map_x_out(hit_chk_x), // map
                   .map_y_out(hit_chk_y),
@@ -88,7 +94,8 @@ module top(
                   .start_ray(start_ray), // scanner
                   .ray_done(ray_done),
                   .finalDist(finalDist), // buffer
-                  .hit_side(hit_side),  // renderer
+                  .tex_x_out(tex_x),
+                  .hit_side(hit_side),
                   .clk(clk),
                   .rst_n(rst_n)
                 );
@@ -116,6 +123,7 @@ module top(
              .vga_rgb(pixel),
              .show_y(show_y),
              .wall_dist(renderDist),
+             .tex_x(tex_x_buff),
              .hit_side(hit_side_buff),
              .clk(clk),
              .rst_n(rst_n)
