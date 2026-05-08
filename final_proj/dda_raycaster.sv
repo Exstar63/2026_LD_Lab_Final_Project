@@ -6,6 +6,8 @@ module dda_raycaster(
     input  logic [15:0] player_x,
     input  logic [15:0] player_y,
     input  logic [7:0] ray_angle,
+    input  logic [15:0] rayDirX,
+    input  logic [15:0] rayDirY,
     input  logic [15:0] corr_coef,
 
     // map comms
@@ -17,6 +19,7 @@ module dda_raycaster(
     input  logic start_ray, // scanner control
     output logic ray_done,
     output logic [15:0] finalDist,
+    output logic [5:0] tex_x_out,
     output logic hit_side   // 0 for vertical wall (X), 1 for horizontal wall (Y)
   );
 
@@ -41,8 +44,8 @@ module dda_raycaster(
   logic signed [1:0] step_x, step_y; // +1 or -1
   logic signed [1:0] step_x_next, step_y_next;
   logic hit_side_next;
+  logic [5:0] tex_x_out_next;
   logic [15:0] finalDist_next;
-  logic [31:0] finalDist_temp;
   logic ray_done_next;
 
   // DistX/Y inv trig rom
@@ -64,6 +67,33 @@ module dda_raycaster(
     map_y_out = map_y;
   end
 
+  // distance and texture calc
+  logic [15:0] rawDist;
+  logic [31:0] finalDist_temp;
+  logic [31:0] hit_coord;
+  logic [5:0] tex_x, tex_x_out_temp;
+  always_comb
+  begin
+    rawDist = (hit_side)? (sideDistY - deltaDistY) : (sideDistX - deltaDistX);
+    finalDist_temp = rawDist * corr_coef;
+    if (hit_side)
+      hit_coord = {16'b0, player_x} + ((32'(rawDist) * rayDirX) >> 8);
+    else
+      hit_coord = {16'b0, player_y} + ((32'(rawDist) * rayDirY) >> 8);
+
+    /*  exact_hit_coord = hit_coord[15:0];
+        wallX_fraction = exact_hit_coord[7:0];
+        tex_x = wallX_fraction[7:2]; */
+
+    tex_x = hit_coord[7:2];  // rescaling to 64*64 (texture size)
+    if (hit_side == 0 && rayDirX[15])       // flip x wall
+      tex_x_out_temp = 6'd63 - tex_x;
+    else if (hit_side == 1 && !rayDirY[15]) // filp y wall
+      tex_x_out_temp = 6'd63 - tex_x;
+    else
+      tex_x_out_temp = tex_x;
+  end
+
   // FSM
   always_comb
   begin
@@ -73,6 +103,7 @@ module dda_raycaster(
     deltaDistX_next = deltaDistX;
     deltaDistY_next = deltaDistY;
     finalDist_next = finalDist;
+    tex_x_out_next = tex_x_out;
     hit_side_next = hit_side;
     map_x_next = map_x;
     map_y_next = map_y;
@@ -155,8 +186,8 @@ module dda_raycaster(
 
       CALC_DIST:
       begin
-        finalDist_temp = ((hit_side)? (sideDistY - deltaDistY) : (sideDistX - deltaDistX)) * corr_coef;
-        finalDist_next = finalDist_temp[23:8] ;
+        finalDist_next = finalDist_temp[23:8];
+        tex_x_out_next = tex_x_out_temp;
         ray_done_next = 1'b1; // col ready flag
         state_next = IDLE;
       end
@@ -178,6 +209,7 @@ module dda_raycaster(
       deltaDistX <= deltaDistX_next;
       deltaDistY <= deltaDistY_next;
       finalDist <= finalDist_next;
+      tex_x_out <= tex_x_out_next;
       hit_side <= hit_side_next;
       map_x <= map_x_next;
       map_y <= map_y_next;
