@@ -1,9 +1,4 @@
-final_proj/final_proj.cache/*
-final_proj/final_proj.hw/*
-final_proj/final_proj.ip_user_files/*
-final_proj/final_proj.runs/*
-final_proj/final_proj.sim/*
-final_proj/final_proj.xpr
+final_proj/final_proj.*
 final_proj/vivado*
 pictrans/*
 proj_test/*
