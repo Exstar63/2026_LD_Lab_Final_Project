@@ -4,15 +4,15 @@ module dist_buffer(
     // dda_scanner comm
     input  logic        write_enable,
     input  logic [8:0]  write_addr,  // 0 to 319
-    input  logic [16:0] write_data,  // final_distance from DDA
+    input  logic [22:0] write_data,  // final_distance from DDA
 
     // render comm
     input  logic [8:0]  read_addr,   // internal_x from VGA
-    output logic [16:0] read_data    // Output to the Renderer
+    output logic [22:0] read_data    // Output to the Renderer
   );
 
   (* ram_style = "block" *)
-  logic [16:0] ram [0:319]; // 320 * 16'b
+  logic [22:0] ram [0:319]; // 320 * 16'b
 
   always_ff @(posedge clk)
   begin
