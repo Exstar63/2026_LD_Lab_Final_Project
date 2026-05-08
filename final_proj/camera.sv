@@ -23,6 +23,8 @@ module camera(
     output logic [15:0] player_x_out,
     output logic [15:0] player_y_out,
     output logic [7:0] ray_angle_out,
+    output logic [15:0] rayDirX_out,
+    output logic [15:0] rayDirY_out,
     output logic [15:0] corr_coef
   );
 
@@ -48,8 +50,18 @@ module camera(
       ray_angle_out <= p_angle + temp_x[15:8];
     end
 
-  // fish eye correction -> raycaster
-  trig_rom corr_coef_mem(.angle(del_angle),.clk(clk),.cos_out(corr_coef),.sin_out());
+  // fisheye corr. / raydir_X,Y -> raycaster
+  trig_rom corr_coef_mem(.angle(del_angle),
+                         .clk(clk),
+                         .cos_out(corr_coef),
+                         .sin_out()
+                        );
+
+  trig_rom ray_dir_mem(.angle(ray_angle_out),
+                       .clk(clk),
+                       .cos_out(rayDirX_out),
+                       .sin_out(rayDirY_out)
+                      );
 
   // mov const
   localparam logic [15:0] MOVE_SPEED = 16'h0008;  // ~0.1 units in Q8.8
