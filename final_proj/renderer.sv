@@ -67,7 +67,7 @@ module renderer(
   tex_gen_mem map_tex_mem (
                   .clka(clk),
                   .wea(0),
-                  .addra({tex_y,tex_x}), // Your {tex_y, tex_x}
+                  .addra({tex_y,tex_x}),
                   .dina(12'd0),
                   .douta(tex_rgb)    // The 12-bit output color
                 );
