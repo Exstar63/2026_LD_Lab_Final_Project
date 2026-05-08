@@ -18,22 +18,60 @@ module renderer(
     $readmemh("height_lut.mem", height_rom);
   end
 
+  localparam logic [15:0] TEX_SCALE = 16'd136;
+
   logic [9:0] lut_index;
-  logic [7:0] lut_height, wall_top_next, wall_bottom_next;
-  logic [11:0] rgb_next;
+  logic [7:0] lut_height, wall_top, wall_bottom;
+  logic [11:0] rgb_next, tex_rgb;
+  logic ceil, floor, wall, lower_half;
+
+  logic [7:0] dy;
+  logic [31:0] tex_dy;    // Multiplication container
+  logic [5:0] tex_y;      // Final texture coordinate
+  logic [15:0] tex_y_step;
+  logic [31:0] tex_y_step_temp;
 
   always_comb
   begin
     lut_height = height_rom[wall_dist[11:2]];
-    wall_top_next = 8'd120 - (lut_height >> 1);
-    wall_bottom_next = 8'd120 + (lut_height >> 1);
-    if (show_y < wall_top_next)
-      rgb_next = 12'h222; // ceil
-    else if (show_y > wall_bottom_next)
-      rgb_next = 12'h444; // floor
+    wall_top = 8'd120 - (lut_height >> 1);
+    wall_bottom = 8'd120 + (lut_height >> 1);
+
+    ceil = (show_y < wall_top);
+    floor = (show_y > wall_bottom);
+    wall = ~(ceil|floor);
+    lower_half = (show_y >= 9'd120);
+
+    dy = (lower_half)? (show_y - 9'd120):(9'd120 - show_y);
+    tex_y_step_temp = wall_dist * TEX_SCALE;
+    tex_y_step = tex_y_step_temp[23:8];
+    tex_dy = dy * tex_y_step;
+
+    if (lower_half)
+      tex_y = (tex_dy[13:8] > 6'd31)? (6'd63) : (6'd32 + tex_dy[13:8]);
     else
-      rgb_next = (hit_side)? 12'h008 : 12'h00F; // Y/X
+      tex_y = (tex_dy[13:8] > 6'd31)? (6'd0) : (6'd31 - tex_dy[13:8]);
+
+    if (ceil)
+      rgb_next = 12'h222; // ceil
+    else if (floor)
+      rgb_next = 12'h444; // floor
+    else if (hit_side)
+      rgb_next = {1'b0, tex_rgb[11:9], 1'b0, tex_rgb[7:5], 1'b0, tex_rgb[3:1]}; // crappy shading
+    else
+      rgb_next = tex_rgb;
+      // rgb_next = (hit_side)? 12'h008 : 12'h00F; // Y/X single color wall
+
   end
+
+  tex_gen_mem map_tex_mem (
+                  .clka(clk),
+                  .wea(0),
+                  .addra({tex_y,tex_x}), // Your {tex_y, tex_x}
+                  .dina(12'd0),
+                  .douta(tex_rgb)    // The 12-bit output color
+                );
+
 
   always_ff @(posedge clk)  // sync color output
   begin
