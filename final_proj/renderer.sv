@@ -18,16 +18,15 @@ module renderer(
     $readmemh("height_lut.mem", height_rom);
   end
 
-  localparam logic [15:0] TEX_SCALE = 16'd136;
+  localparam logic [15:0] TEX_SCALE = 16'd68; // 68 perfect for 64*64 -> 240 h
 
   logic [9:0] lut_index;
   logic [7:0] lut_height, wall_top, wall_bottom;
   logic [11:0] rgb_next, tex_rgb;
   logic ceil, floor, wall, lower_half;
-
   logic [7:0] dy;
-  logic [31:0] tex_dy;    // Multiplication container
-  logic [5:0] tex_y;      // Final texture coordinate
+  logic [31:0] tex_dy;
+  logic [5:0] tex_y;
   logic [15:0] tex_y_step;
   logic [31:0] tex_y_step_temp;
 
@@ -71,7 +70,6 @@ module renderer(
                   .dina(12'd0),
                   .douta(tex_rgb)    // The 12-bit output color
                 );
-
 
   always_ff @(posedge clk)  // sync color output
   begin
