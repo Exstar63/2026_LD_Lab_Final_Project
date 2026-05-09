@@ -119,7 +119,7 @@ module top(
                 .rst_n(rst_n)
               );
 
-  renderer render_inst(
+  wall_renderer wall_render_inst(
              .vga_rgb(pixel),
              .show_y(show_y),
              .wall_dist(renderDist),

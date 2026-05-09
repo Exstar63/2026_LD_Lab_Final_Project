@@ -1,4 +1,4 @@
-module renderer(
+module wall_renderer(
     input logic clk,
     input logic rst_n,
     input logic [8:0] show_y,
