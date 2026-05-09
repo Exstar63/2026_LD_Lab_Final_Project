@@ -1,10 +1,10 @@
 module renderer(
     input logic clk,
     input logic rst_n,
-    input logic [8:0] show_y,   // show_y (0-239)
+    input logic [8:0] show_y,
 
     // dist_buffer comm
-    input logic [15:0] wall_dist,    // From Distance Buffer
+    input logic [15:0] wall_dist,
     input logic [5:0] tex_x,
     input logic hit_side,
     output logic [11:0] vga_rgb
@@ -59,7 +59,6 @@ module renderer(
       rgb_next = {1'b0, tex_rgb[11:9], 1'b0, tex_rgb[7:5], 1'b0, tex_rgb[3:1]}; // crappy shading
     else
       rgb_next = tex_rgb;
-      // rgb_next = (hit_side)? 12'h008 : 12'h00F; // Y/X single color wall
 
   end
 
