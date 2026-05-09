@@ -169,7 +169,7 @@ module dda_raycaster(
       end
 
       MEM_WAIT:
-        state_next = CHECK_HIT; // timeholder wait for map ROM output
+        state_next = CHECK_HIT; // map/trig LUT rom time buffer
 
       CHECK_HIT:
       begin
