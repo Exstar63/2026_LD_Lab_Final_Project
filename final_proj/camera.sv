@@ -90,7 +90,7 @@ module camera(
     probe_y = p_y_next[11:8];
     p_x_next = p_x + ((btn_up)? d_x : 16'd0) - ((btn_down)? d_x : 16'd0);
     p_y_next = p_y + ((btn_up)? d_y : 16'd0) - ((btn_down)? d_y : 16'd0);
-    p_angle_next = p_angle + ((btn_left)? TURN_SPEED : 8'd0) - ((btn_right)? TURN_SPEED : 8'd0);
+    p_angle_next = p_angle - ((btn_left)? TURN_SPEED : 8'd0) + ((btn_right)? TURN_SPEED : 8'd0);
   end
 
   always_ff @(posedge clk) // sync read for map rom
