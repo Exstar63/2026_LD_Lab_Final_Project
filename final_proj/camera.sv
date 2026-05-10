@@ -22,6 +22,8 @@ module camera(
     // raycaseter comm
     output logic [15:0] player_x_out,
     output logic [15:0] player_y_out,
+    output logic [15:0] sin_p,
+    output logic [15:0] cos_p,
     output logic [7:0] ray_angle_out,
     output logic [15:0] rayDirX_out,
     output logic [15:0] rayDirY_out,
@@ -65,7 +67,7 @@ module camera(
 
   // mov const
   localparam logic [15:0] MOVE_SPEED = 16'h0008;  // ~0.1 units in Q8.8
-  localparam logic [7:0] TURN_SPEED = 8'd3;       // 2 BAM steps
+  localparam logic [7:0] TURN_SPEED = 8'd2;       // 2 BAM steps
 
   logic frame_tick, v_blank_prev;
   always_ff @(posedge clk)
@@ -75,11 +77,10 @@ module camera(
   // mov state regs
   logic [15:0] p_x, p_y, d_x, d_y;
   logic [15:0] p_x_next, p_y_next;
-  logic [15:0] sin_val, cos_val;
   logic [7:0] p_angle_next;
-  trig_rom trig_mem(.sin_out(sin_val),.cos_out(cos_val),.angle(p_angle),.clk(clk));
-  q88_mult cos_mult_inst(.a(cos_val),.b(MOVE_SPEED),.out(d_x));
-  q88_mult sin_mult_inst(.a(sin_val),.b(MOVE_SPEED),.out(d_y));
+  trig_rom trig_mem(.sin_out(sin_p),.cos_out(cos_p),.angle(p_angle),.clk(clk));
+  q88_mult cos_mult_inst(.a(cos_p),.b(MOVE_SPEED),.out(d_x));
+  q88_mult sin_mult_inst(.a(sin_p),.b(MOVE_SPEED),.out(d_y));
 
   // player mov (SOCD)
   always_comb
