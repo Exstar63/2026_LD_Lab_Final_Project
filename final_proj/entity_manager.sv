@@ -1,4 +1,12 @@
-module entity_manager (
+typedef struct packed{
+          logic signed [15:0] screen_x;
+          logic signed [15:0] screen_y;
+          logic [15:0]        Dist;
+          logic [15:0]        step;
+          logic               valid;
+        } oam_entry_t;
+
+module entity_manager(
     input logic clk,
     input logic rst_n,
     input logic v_blank,
@@ -30,7 +38,7 @@ module entity_manager (
   logic ent_enable [0:31];
   always_comb
   begin
-    for (int i=0; i<32; i++)
+    for (int i=2; i<32; i++)
     begin
       ent_world_x[i] = 16'sd0;
       ent_world_y[i] = 16'sd0;
@@ -133,7 +141,7 @@ module entity_manager (
         begin
           oam_data_next[oam_idx].screen_x = proj_screen_x;
           oam_data_next[oam_idx].screen_y = proj_screen_y;
-          oam_data_next[oam_idx].dist = proj_dist;
+          oam_data_next[oam_idx].Dist = proj_dist;
           oam_data_next[oam_idx].step = proj_step;
           oam_data_next[oam_idx].valid = 1'b1;
           oam_idx_next = oam_idx + 1;
@@ -179,7 +187,7 @@ module entity_manager (
       begin
         oam_data[i].screen_x <= oam_data_next[i].screen_x;
         oam_data[i].screen_y <= oam_data_next[i].screen_y;
-        oam_data[i].dist <= oam_data_next[i].dist;
+        oam_data[i].Dist <= oam_data_next[i].Dist;
         oam_data[i].step <= oam_data_next[i].step;
         oam_data[i].valid <= oam_data_next[i].valid;
       end

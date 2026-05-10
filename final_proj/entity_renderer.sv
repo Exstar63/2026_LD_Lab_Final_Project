@@ -74,9 +74,9 @@ module entity_renderer (
     entity_hit = 1'b0;
     for (int i = 0; i < 8; i++)
     begin
-      if (boxed[i] && (oam_data[i].dist < dist_min))
+      if (boxed[i] && (oam_data[i].Dist < dist_min))
       begin
-        dist_min = oam_data[i].dist;
+        dist_min = oam_data[i].Dist;
         id_min  = i[2:0];
         entity_hit = 1'b1;
       end
