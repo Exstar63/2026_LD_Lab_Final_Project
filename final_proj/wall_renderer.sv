@@ -62,13 +62,11 @@ module wall_renderer(
 
   end
 
-  tex_gen_mem map_tex_mem (
-                  .clka(clk),
-                  .wea(0),
-                  .addra({tex_y,tex_x}),
-                  .dina(12'd0),
-                  .douta(tex_rgb)    // The 12-bit output color
-                );
+  wall_tex_rom wall_tex_mem(
+    .clk(clk),
+    .addr({tex_y,tex_x}),
+    .color_out(tex_rgb)
+  );
 
   always_ff @(posedge clk)  // sync color output
   begin
