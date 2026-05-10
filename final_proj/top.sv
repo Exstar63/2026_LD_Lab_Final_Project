@@ -15,6 +15,12 @@ module top(
   logic draw_sprite_en;
   logic valid;
   logic v_blank;
+
+  // pixel hit control
+  logic [9:0] h_cnt, v_cnt;
+  logic [8:0] show_x, show_y;
+  logic [8:0] which_x, rendering_x;
+
   always_comb // rescale for render @ 320*240
   begin
     show_x = h_cnt>>1;
@@ -23,11 +29,6 @@ module top(
     {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel : 12'h0;
     pixel = (draw_sprite_en) ? entity_pixel : wall_pixel;
   end
-
-  // pixel hit control
-  logic [9:0] h_cnt, v_cnt;
-  logic [8:0] show_x, show_y;
-  logic [8:0] which_x, rendering_x;
 
   // ray/player location map_hit chk/probe
   logic [15:0] player_x, player_y;
@@ -50,12 +51,13 @@ module top(
   assign buff_out_packet = {hit_side_buff, tex_x_buff, renderDist};
 
   // entity pipeline
-  logic ent_enable;
-  logic [15:0] ent_x, ent_y;
-  logic [3:0] ent_tex_id;
-  logic signed [15:0] screen_x;
-  logic [15:0] sprite_dist, sprite_step;
-  logic is_visible;
+  logic signed [15:0] proj_screen_x, proj_screen_y;
+  logic [15:0] proj_dist, proj_step;
+  logic proj_show, proj_calc_done;
+  logic signed [15:0] target_x, target_y, target_z;
+  logic [15:0] target_scale;
+  logic target_enable;
+  oam_entry_t oam_data [0:7];
   logic [11:0] tex_addr;
   logic [11:0] tex_rgb;
 
@@ -142,22 +144,23 @@ module top(
                   .rst_n(rst_n)
                 );
 
-  typedef struct packed {
-            logic signed [15:0] screen_x;
-            logic signed [15:0] screen_y;
-            logic [15:0]        dist;
-            logic [15:0]        step;
-            logic               valid;
-          } oam_entry_t;
-
-  entity_ctrl entity_ctrl_inst(
-                .clk(clk),
-                .rst_n(rst_n),
-                .ent_enable(ent_enable),
-                .ent_x(ent_x),
-                .ent_y(ent_y),
-                .ent_tex_id(ent_tex_id)
-              );
+  entity_manager entity_manager_inst(
+                   .clk(clk),
+                   .rst_n(rst_n),
+                   .v_blank(v_blank),
+                   .proj_screen_x(proj_screen_x),
+                   .proj_screen_y(proj_screen_y),
+                   .proj_dist(proj_dist),
+                   .proj_step(proj_step),
+                   .proj_show(proj_show),
+                   .proj_calc_done(proj_calc_done),
+                   .target_x(target_x),
+                   .target_y(target_y),
+                   .target_z(target_z),
+                   .target_scale(target_scale),
+                   .target_enable(target_enable),
+                   .oam_data(oam_data)
+                 );
 
   entity_projection entity_projection_inst(
                       .clk(clk),
@@ -166,13 +169,17 @@ module top(
                       .p_y($signed(player_y)),
                       .cos_p(cos_p),
                       .sin_p(sin_p),
-                      .ent_x($signed(ent_x)),
-                      .ent_y($signed(ent_y)),
-                      .ent_enable(ent_enable),
-                      .screen_x(screen_x),
-                      .sprite_dist(sprite_dist),
-                      .sprite_step(sprite_step),
-                      .is_visible(is_visible)
+                      .ent_x(target_x),
+                      .ent_y(target_y),
+                      .ent_z(target_z),
+                      .ent_scale(target_scale),
+                      .ent_enable(target_enable),
+                      .screen_x(proj_screen_x),
+                      .screen_y(proj_screen_y),
+                      .ent_dist(proj_dist),
+                      .tex_step(proj_step),
+                      .show(proj_show),
+                      .calc_done(proj_calc_done)
                     );
 
   entity_renderer entity_render_inst(
@@ -181,14 +188,11 @@ module top(
                     .show_x(show_x),
                     .show_y(show_y),
                     .wall_dist(renderDist),
-                    .screen_x(screen_x),
-                    .sprite_dist(sprite_dist),
-                    .sprite_step(sprite_step),
-                    .is_visible(is_visible),
+                    .oam_data(oam_data),
                     .tex_rgb(tex_rgb),
                     .tex_addr(tex_addr),
-                    .final_sprite_rgb(entity_pixel),
-                    .draw_sprite_en(draw_sprite_en)
+                    .entity_rgb_out(entity_pixel),
+                    .entity_draw_en(draw_sprite_en)
                   );
 
   entity_tex_rom entity_tex_inst(
