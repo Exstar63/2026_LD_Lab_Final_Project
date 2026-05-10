@@ -11,31 +11,32 @@ module top(
 
   // vga control flags
   logic clk_25MHz;
-  logic [11:0] pixel;
+  logic [11:0] pixel, wall_pixel, entity_pixel;
+  logic draw_sprite_en;
   logic valid;
   logic v_blank;
-
-  assign {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel : 12'h0;
+  always_comb // rescale for render @ 320*240
+  begin
+    show_x = h_cnt>>1;
+    show_y = v_cnt>>1;
+    which_x = (v_blank) ? rendering_x : show_x ;
+    {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel : 12'h0;
+    pixel = (draw_sprite_en) ? entity_pixel : wall_pixel;
+  end
 
   // pixel hit control
   logic [9:0] h_cnt, v_cnt;
   logic [8:0] show_x, show_y;
   logic [8:0] which_x, rendering_x;
 
-  always_comb // rescale for render @ 320*240
-  begin
-    show_x = h_cnt>>1;
-    show_y = v_cnt>>1;
-    which_x = (v_blank) ? rendering_x : show_x ;
-  end
-
   // ray/player location map_hit chk/probe
   logic [15:0] player_x, player_y;
+  logic [15:0] cos_p, sin_p;
   logic [7:0] rendering_angle;
   logic [15:0] rayDirX, rayDirY;
   logic [3:0] hit_chk_x, hit_chk_y;
   logic [3:0] probe_x, probe_y;
-  logic [15:0] corr_coef; 
+  logic [15:0] corr_coef;
 
   // comm flag
   logic map_hit, start_ray, ray_done, write_enable;
@@ -48,6 +49,16 @@ module top(
   assign buff_in_packet = {hit_side, tex_x, finalDist};
   assign buff_out_packet = {hit_side_buff, tex_x_buff, renderDist};
 
+  // entity pipeline
+  logic ent_enable;
+  logic [15:0] ent_x, ent_y;
+  logic [3:0] ent_tex_id;
+  logic signed [15:0] screen_x;
+  logic [15:0] sprite_dist, sprite_step;
+  logic is_visible;
+  logic [11:0] tex_addr;
+  logic [11:0] tex_rgb;
+
   clock_divisor clk_wiz_0_inst(
                   .clk(clk),
                   .clk1(clk_25MHz),
@@ -57,6 +68,8 @@ module top(
   camera cam_inst(
            .player_x_out(player_x),         // raycaster
            .player_y_out(player_y),
+           .cos_p(cos_p),
+           .sin_p(sin_p),
            .ray_angle_out(rendering_angle),
            .rayDirX_out(rayDirX),
            .rayDirY_out(rayDirY),
@@ -120,16 +133,70 @@ module top(
               );
 
   wall_renderer wall_render_inst(
-             .vga_rgb(pixel),
-             .show_y(show_y),
-             .wall_dist(renderDist),
-             .tex_x(tex_x_buff),
-             .hit_side(hit_side_buff),
-             .clk(clk),
-             .rst_n(rst_n)
-           );
+                  .vga_rgb(wall_pixel),
+                  .show_y(show_y),
+                  .wall_dist(renderDist),
+                  .tex_x(tex_x_buff),
+                  .hit_side(hit_side_buff),
+                  .clk(clk),
+                  .rst_n(rst_n)
+                );
 
-  // Render the picture by VGA controller
+  typedef struct packed {
+            logic signed [15:0] screen_x;
+            logic signed [15:0] screen_y;
+            logic [15:0]        dist;
+            logic [15:0]        step;
+            logic               valid;
+          } oam_entry_t;
+
+  entity_ctrl entity_ctrl_inst(
+                .clk(clk),
+                .rst_n(rst_n),
+                .ent_enable(ent_enable),
+                .ent_x(ent_x),
+                .ent_y(ent_y),
+                .ent_tex_id(ent_tex_id)
+              );
+
+  entity_projection entity_projection_inst(
+                      .clk(clk),
+                      .rst_n(rst_n),
+                      .p_x($signed(player_x)),
+                      .p_y($signed(player_y)),
+                      .cos_p(cos_p),
+                      .sin_p(sin_p),
+                      .ent_x($signed(ent_x)),
+                      .ent_y($signed(ent_y)),
+                      .ent_enable(ent_enable),
+                      .screen_x(screen_x),
+                      .sprite_dist(sprite_dist),
+                      .sprite_step(sprite_step),
+                      .is_visible(is_visible)
+                    );
+
+  entity_renderer entity_render_inst(
+                    .clk(clk),
+                    .rst_n(rst_n),
+                    .show_x(show_x),
+                    .show_y(show_y),
+                    .wall_dist(renderDist),
+                    .screen_x(screen_x),
+                    .sprite_dist(sprite_dist),
+                    .sprite_step(sprite_step),
+                    .is_visible(is_visible),
+                    .tex_rgb(tex_rgb),
+                    .tex_addr(tex_addr),
+                    .final_sprite_rgb(entity_pixel),
+                    .draw_sprite_en(draw_sprite_en)
+                  );
+
+  entity_tex_rom entity_tex_inst(
+                   .clk(clk),
+                   .addr(tex_addr),
+                   .color_out(tex_rgb)
+                 );
+
   vga_controller vga_inst(
                    .pclk(clk_25MHz),
                    .reset(~rst_n),
