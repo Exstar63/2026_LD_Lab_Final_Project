@@ -1,9 +1,10 @@
-typedef struct packed{
+typedef struct packed
+        {
           logic signed [15:0] screen_x;
           logic signed [15:0] screen_y;
-          logic [15:0]        Dist;
-          logic [15:0]        step;
-          logic               valid;
+          logic [15:0] Dist;
+          logic [15:0] step;
+          logic valid;
         } oam_entry_t;
 
 module entity_manager(
@@ -51,14 +52,14 @@ module entity_manager(
     ent_world_x[0] = 16'h0580;
     ent_world_y[0] = 16'h0580;
     ent_world_z[0] = 16'sd0;
-    ent_scale[0] = 16'd68;
+    ent_scale[0] = 16'd100;
     ent_enable[0]  = 1'b1;
 
     // ent_1
     ent_world_x[1] = 16'h0700;
     ent_world_y[1] = 16'h0700;
     ent_world_z[1] = 16'sd80;
-    ent_scale[1] = 16'd68;
+    ent_scale[1] = 16'd100;
     ent_enable[1]  = 1'b1;
   end
 
@@ -71,7 +72,7 @@ module entity_manager(
 
   // entity index
   logic [4:0] ent_idx, ent_idx_next;
-  logic [2:0] oam_idx, oam_idx_next;
+  logic [3:0] oam_idx, oam_idx_next;
 
   // frame pulse
   logic frame_tick, v_blank_prev;
@@ -123,8 +124,21 @@ module entity_manager(
         target_z_next = ent_world_z[ent_idx];
         target_scale_next = ent_scale[ent_idx];
         target_enable_next = ent_enable[ent_idx];
-        state_next = WAIT;
+
+        if (ent_enable[ent_idx])
+          state_next = WAIT;
+        else
+        begin
+          if (ent_idx == 5'd31)
+            state_next = IDLE;
+          else
+          begin
+            ent_idx_next = ent_idx + 1;
+            state_next = LOAD;
+          end
+        end
       end
+
 
       WAIT: // wait for LUT
       begin

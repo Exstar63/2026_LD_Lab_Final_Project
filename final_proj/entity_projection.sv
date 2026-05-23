@@ -27,14 +27,6 @@ module entity_projection(
             CALC     = 2'd2
           } state_t;
 
-  // division LUT (240/dist)
-  (* ram_style = "block" *)
-  logic [7:0] height_rom [0:1023];
-  initial
-  begin
-    $readmemh("height_lut.mem", height_rom);
-  end
-
   // stable input
   logic signed [15:0] p_x_r, p_y_r, cos_p_r, sin_p_r;
   logic signed [15:0] ent_x_r, ent_y_r, ent_z_r;
@@ -79,7 +71,6 @@ module entity_projection(
   logic [31:0] tex_step_temp;
   always_comb
   begin
-    lut_height = height_rom[depth[11:2]];
     dx = ent_x_r - p_x_r;
     dy = ent_y_r - p_y_r;
     hor_pos_temp = -(dx * sin_p_r) + (dy * cos_p_r);
@@ -87,6 +78,17 @@ module entity_projection(
     depth_temp =  (dx * cos_p_r) + (dy * sin_p_r);
     depth = depth_temp[23:8];
     tex_step_temp = 32'(depth) * ent_scale_r;
+  end
+
+  // division LUT (240/dist)
+  (* ram_style = "block" *)
+  logic [7:0] height_rom [0:1023];
+  initial
+  begin
+    $readmemh("height_lut.mem", height_rom);
+  end
+  always_ff @(posedge clk) begin
+    lut_height <= height_rom[depth[11:2]];
   end
 
   // FSM

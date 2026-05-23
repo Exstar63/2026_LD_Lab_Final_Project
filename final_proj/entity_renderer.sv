@@ -44,10 +44,10 @@ module entity_renderer (
       begin
         show_dx[i] = show_x_temp - oam_data[i].screen_x;
         show_dy[i] = show_y_temp - oam_data[i].screen_y;
-        tex_dx[i] = show_dx[i] * $signed({17'b0, oam_data[i].step});
-        tex_dy[i] = show_dy[i] * $signed({17'b0, oam_data[i].step});
-        tex_x[i] = 16'sd32 + tex_dx[i][23:8];
-        tex_y[i] = 16'sd32 + tex_dy[i][23:8];
+        tex_dx[i] = show_dx[i] * $signed({1'b0, oam_data[i].step});
+        tex_dy[i] = show_dy[i] * $signed({1'b0, oam_data[i].step});
+        tex_x[i] = 16'sd32 + $signed(tex_dx[i][23:8]);
+        tex_y[i] = 16'sd32 + $signed(tex_dy[i][23:8]);
         boxed[i] = (tex_x[i] >= 0) && (tex_x[i] < 64) && (tex_y[i] >= 0) && (tex_y[i] < 64);
       end
       else
@@ -99,21 +99,29 @@ module entity_renderer (
     end
   end
 
-  // delay for rom read
-  logic layer_buff;
+  // Delay for ROM read
+  logic layer_buff_1; // Addr sent to BRAM
+  logic layer_buff_2; // Data from BRAM
+
   always_ff @(posedge clk)
   begin
     if (~rst_n)
-      layer_buff <= 1'b0;
+    begin
+      layer_buff_1 <= 1'b0;
+      layer_buff_2 <= 1'b0;
+    end
     else
-      layer_buff <= layer_buff_next;
+    begin
+      layer_buff_1 <= layer_buff_next;
+      layer_buff_2 <= layer_buff_1;
+    end
   end
 
   always_comb
   begin
     entity_draw_en = 1'b0;
     entity_rgb_out = 12'h000;
-    if (layer_buff)
+    if (layer_buff_2)
     begin
       if (tex_rgb != TP_COLOR)
       begin
