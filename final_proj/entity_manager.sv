@@ -39,7 +39,7 @@ module entity_manager(
   logic ent_enable [0:31];
   always_comb
   begin
-    for (int i=2; i<32; i++)
+    for (int i=4; i<32; i++)
     begin
       ent_world_x[i] = 16'sd0;
       ent_world_y[i] = 16'sd0;
@@ -51,16 +51,28 @@ module entity_manager(
     // ent_0
     ent_world_x[0] = 16'h0580;
     ent_world_y[0] = 16'h0580;
-    ent_world_z[0] = 16'sd0;
-    ent_scale[0] = 16'd100;
-    ent_enable[0]  = 1'b1;
+    ent_world_z[0] = -16'sd80;
+    ent_scale[0] = 16'd80;
+    ent_enable[0] = 1'b1;
 
     // ent_1
-    ent_world_x[1] = 16'h0700;
-    ent_world_y[1] = 16'h0700;
-    ent_world_z[1] = 16'sd80;
-    ent_scale[1] = 16'd100;
-    ent_enable[1]  = 1'b1;
+    ent_world_x[1] = 16'h0680;
+    ent_world_y[1] = 16'h0580;
+    ent_world_z[1] = -16'sd80;
+    ent_scale[1] = 16'd80;
+    ent_enable[1] = 1'b1;
+
+    ent_world_x[2] = 16'h0780;
+    ent_world_y[2] = 16'h0580;
+    ent_world_z[2] = -16'sd80;
+    ent_scale[2] = 16'd80;
+    ent_enable[2] = 1'b1;
+
+    ent_world_x[3] = 16'h0880;
+    ent_world_y[3] = 16'h0580;
+    ent_world_z[3] = -16'sd80;
+    ent_scale[3] = 16'd80;
+    ent_enable[3] = 1'b1;
   end
 
   typedef enum logic [1:0] {
@@ -70,10 +82,6 @@ module entity_manager(
             SAVE
           } state_t;
 
-  // entity index
-  logic [4:0] ent_idx, ent_idx_next;
-  logic [3:0] oam_idx, oam_idx_next;
-
   // frame pulse
   logic frame_tick, v_blank_prev;
   always_ff @(posedge clk)
@@ -82,6 +90,8 @@ module entity_manager(
 
   // reg
   state_t state, state_next;
+  logic [4:0] ent_idx, ent_idx_next;
+  logic [3:0] oam_idx, oam_idx_next;
   logic signed [15:0] target_x_next;
   logic signed [15:0] target_y_next;
   logic signed [15:0] target_z_next;
@@ -151,7 +161,7 @@ module entity_manager(
 
       SAVE:
       begin
-        if (proj_show && (oam_idx < 8))
+        if ((proj_show) & (proj_screen_x > -16'sd100) & (proj_screen_x <  16'sd420) & (oam_idx < 8)) // overflow fix
         begin
           oam_data_next[oam_idx].screen_x = proj_screen_x;
           oam_data_next[oam_idx].screen_y = proj_screen_y;

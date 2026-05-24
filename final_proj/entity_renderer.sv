@@ -3,7 +3,7 @@ module entity_renderer (
     input logic rst_n,
 
     // vga ctrl
-    input logic [9:0]  show_x, show_y,
+    input logic [9:0] show_x, show_y,
 
     // dist buffer comm
     input logic [15:0] wall_dist,
@@ -22,9 +22,8 @@ module entity_renderer (
 
   localparam logic [11:0] TP_COLOR = 12'hF0F; // Magic Pink
 
+  // boxed check
   logic signed [15:0] show_x_temp, show_y_temp;
-
-  // Parallel calculation arrays
   logic signed [15:0] show_dx [0:7];
   logic signed [15:0] show_dy [0:7];
   logic signed [31:0] tex_dx [0:7];
@@ -32,8 +31,6 @@ module entity_renderer (
   logic signed [15:0] tex_x [0:7];
   logic signed [15:0] tex_y [0:7];
   logic [7:0] boxed;
-
-  // boxed chk
   always_comb
   begin
     show_x_temp = signed'({6'b0, show_x});
@@ -63,6 +60,35 @@ module entity_renderer (
     end
   end
 
+  // stable calculation reg
+  logic signed [15:0] tex_x_r [0:7];
+  logic signed [15:0] tex_y_r [0:7];
+  logic [7:0] boxed_r;
+  logic [15:0] oam_dist_r [0:7];
+  logic [15:0] wall_dist_r;
+  always_ff @(posedge clk)
+  begin
+    if (~rst_n)
+    begin
+      boxed_r <= 8'd0;
+      wall_dist_r <= 16'hFFFF;
+    end
+    else
+    begin
+      wall_dist_r <= wall_dist;
+      for (int i = 0; i < 8; i++)
+      begin
+        tex_x_r[i] <= tex_x[i];
+        tex_y_r[i] <= tex_y[i];
+        boxed_r[i] <= boxed[i];
+        if (oam_data[i].valid)
+          oam_dist_r[i] <= oam_data[i].Dist;
+        else
+          oam_dist_r[i] <= 16'hFFFF;
+      end
+    end
+  end
+
   // depth sort (find top layer entity)
   logic [2:0] id_min;
   logic [15:0] dist_min;
@@ -74,9 +100,9 @@ module entity_renderer (
     entity_hit = 1'b0;
     for (int i = 0; i < 8; i++)
     begin
-      if (boxed[i] && (oam_data[i].Dist < dist_min))
+      if (boxed_r[i] && (oam_dist_r[i] < dist_min))
       begin
-        dist_min = oam_data[i].Dist;
+        dist_min = oam_dist_r[i];
         id_min  = i[2:0];
         entity_hit = 1'b1;
       end
@@ -91,18 +117,17 @@ module entity_renderer (
     layer_buff_next = 1'b0;
     if (entity_hit)
     begin
-      if (dist_min < wall_dist)
+      if (dist_min < wall_dist_r)
       begin
         layer_buff_next = 1'b1;
-        tex_addr = {tex_y[id_min][5:0], tex_x[id_min][5:0]};
+        tex_addr = {tex_y_r[id_min][5:0], tex_x_r[id_min][5:0]};
       end
     end
   end
 
   // Delay for ROM read
-  logic layer_buff_1; // Addr sent to BRAM
-  logic layer_buff_2; // Data from BRAM
-
+  logic layer_buff_1;
+  logic layer_buff_2;
   always_ff @(posedge clk)
   begin
     if (~rst_n)
@@ -117,6 +142,7 @@ module entity_renderer (
     end
   end
 
+  // output
   always_comb
   begin
     entity_draw_en = 1'b0;
