@@ -81,10 +81,7 @@ module entity_renderer (
         tex_x_r[i] <= tex_x[i];
         tex_y_r[i] <= tex_y[i];
         boxed_r[i] <= boxed[i];
-        if (oam_data[i].valid)
-          oam_dist_r[i] <= oam_data[i].Dist;
-        else
-          oam_dist_r[i] <= 16'hFFFF;
+        oam_dist_r[i] <= (oam_data[i].valid)? oam_data[i].Dist : 16'hFFFF;
       end
     end
   end
@@ -96,7 +93,7 @@ module entity_renderer (
   always_comb
   begin
     dist_min = 16'hFFFF;
-    id_min  = 3'd0;
+    id_min = 3'd0;
     entity_hit = 1'b0;
     for (int i = 0; i < 8; i++)
     begin

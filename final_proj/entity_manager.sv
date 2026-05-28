@@ -10,7 +10,7 @@ typedef struct packed
 module entity_manager(
     input logic clk,
     input logic rst_n,
-    input logic v_blank,
+    input logic frame_tick,
 
     // projection input comm
     input logic signed [15:0] proj_screen_x,
@@ -81,12 +81,6 @@ module entity_manager(
             WAIT,
             SAVE
           } state_t;
-
-  // frame pulse
-  logic frame_tick, v_blank_prev;
-  always_ff @(posedge clk)
-    v_blank_prev <= v_blank;
-  assign frame_tick = (v_blank && !v_blank_prev);
 
   // reg
   state_t state, state_next;

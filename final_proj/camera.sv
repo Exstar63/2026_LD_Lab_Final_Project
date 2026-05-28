@@ -3,7 +3,7 @@ module camera(
     input logic rst_n,
 
     // frame tick control
-    input logic v_blank,
+    input logic frame_tick,
 
     // player controls
     input logic btn_up,
@@ -68,11 +68,6 @@ module camera(
   // mov const
   localparam logic [15:0] MOVE_SPEED = 16'h0008;  // ~0.1 units in Q8.8
   localparam logic [7:0] TURN_SPEED = 8'd2;       // 2 BAM steps
-
-  logic frame_tick, v_blank_prev;
-  always_ff @(posedge clk)
-    v_blank_prev <= v_blank;
-  assign frame_tick = (v_blank && !v_blank_prev);
 
   // mov state regs
   logic [15:0] p_x, p_y, d_x, d_y;

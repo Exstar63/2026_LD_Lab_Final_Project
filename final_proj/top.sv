@@ -1,7 +1,7 @@
 module top(
     input logic clk,
     input logic rst_n,
-    input logic btnU,btnD,btnL,btnR,
+    input logic btnU, btnD, btnL, btnR,
     output logic [3:0] vgaRed,
     output logic [3:0] vgaGreen,
     output logic [3:0] vgaBlue,
@@ -15,6 +15,12 @@ module top(
   logic draw_sprite_en;
   logic valid;
   logic v_blank;
+
+  // frame tick
+  logic frame_tick, v_blank_prev;
+  always_ff @(posedge clk)
+    v_blank_prev <= v_blank;
+  assign frame_tick = (v_blank && !v_blank_prev);
 
   // pixel hit control
   logic [9:0] h_cnt, v_cnt;
@@ -84,7 +90,7 @@ module top(
            .btn_down(btnD),
            .btn_left(btnL),
            .btn_right(btnR),
-           .v_blank(v_blank),
+           .frame_tick(frame_tick),
            .clk(clk),
            .rst_n(rst_n)
          );
@@ -147,7 +153,7 @@ module top(
   entity_manager entity_manager_inst(
                    .clk(clk),
                    .rst_n(rst_n),
-                   .v_blank(v_blank),
+                   .frame_tick(frame_tick),
                    .proj_screen_x(proj_screen_x),
                    .proj_screen_y(proj_screen_y),
                    .proj_dist(proj_dist),
