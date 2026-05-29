@@ -2,6 +2,8 @@ module top(
     input logic clk,
     input logic rst_n,
     input logic btnU, btnD, btnL, btnR,
+    inout logic PS2_DATA,
+    inout logic PS2_CLK,
     output logic [3:0] vgaRed,
     output logic [3:0] vgaGreen,
     output logic [3:0] vgaBlue,
@@ -44,6 +46,10 @@ module top(
   logic [3:0] hit_chk_x, hit_chk_y;
   logic [3:0] probe_x, probe_y;
   logic [15:0] corr_coef;
+
+  // keyboard control
+  logic kbd_btn_W, kbd_btn_A, kbd_btn_S, kbd_btn_D, kbd_btn_SP;
+  logic kbd_btn_La, kbd_btn_Ra, kbd_btn_Ua, kbd_btn_Da;
 
   // comm flag
   logic map_hit, start_ray, ray_done, write_enable;
@@ -216,6 +222,22 @@ module top(
                    .v_blank(v_blank),
                    .h_cnt(h_cnt),
                    .v_cnt(v_cnt)
+                 );
+
+  Keyboard_input keyboard_inst(
+                   .clk(clk),
+                   .rst_n(rst_n),
+                   .PS2_DATA(PS2_DATA),
+                   .PS2_CLK(PS2_CLK),
+                   .btn_W(kbd_btn_W),
+                   .btn_A(kbd_btn_A),
+                   .btn_S(kbd_btn_S),
+                   .btn_D(kbd_btn_D),
+                   .btn_SP(kbd_btn_SP),
+                   .btn_La(kbd_btn_La),
+                   .btn_Ra(kbd_btn_Ra),
+                   .btn_Ua(kbd_btn_Ua),
+                   .btn_Da(kbd_btn_Da)
                  );
 
 endmodule
