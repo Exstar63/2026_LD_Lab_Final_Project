@@ -6,10 +6,12 @@ module camera(
     input logic frame_tick,
 
     // player controls
-    input logic btn_up,
-    input logic btn_down,
-    input logic btn_left,
-    input logic btn_right,
+    input logic mov_up,
+    input logic mov_down,
+    input logic mov_left,
+    input logic mov_right,
+    input logic rot_left,
+    input logic rot_right,
 
     // map_rom probe (edge detection)
     output logic [3:0] probe_x,
@@ -84,9 +86,11 @@ module camera(
     player_y_out = p_y;
     probe_x = p_x_next[11:8];
     probe_y = p_y_next[11:8];
-    p_x_next = p_x + ((btn_up)? d_x : 16'd0) - ((btn_down)? d_x : 16'd0);
-    p_y_next = p_y + ((btn_up)? d_y : 16'd0) - ((btn_down)? d_y : 16'd0);
-    p_angle_next = p_angle - ((btn_left)? TURN_SPEED : 8'd0) + ((btn_right)? TURN_SPEED : 8'd0);
+    p_x_next = p_x + ((mov_up)? d_x : 16'd0)- ((mov_down)? d_x : 16'd0)
+             + ((mov_right)? d_y : 16'd0)- ((mov_left)? d_y : 16'd0);
+    p_y_next = p_y + ((mov_up)? d_y : 16'd0)- ((mov_down)? d_y : 16'd0)
+             - ((mov_right)? d_x : 16'd0)- ((mov_left)? d_x : 16'd0);
+    p_angle_next = p_angle - ((rot_left)? TURN_SPEED : 8'd0) + ((rot_right)? TURN_SPEED : 8'd0);
   end
 
   always_ff @(posedge clk) // sync read for map rom
