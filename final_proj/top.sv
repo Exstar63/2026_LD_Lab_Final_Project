@@ -54,7 +54,7 @@ module top(
   // game related comm
   logic kill_en;
   logic [4:0] kill_id;
-  logic [7:0] player_health, ammo;
+  logic [7:0] health, ammo;
   logic [1:0] game_state;
   logic [5:0] weapon_cd;
 
@@ -114,7 +114,7 @@ module top(
                .player_hit(), // world comm
                .enemy_killed(),
                .game_state(game_state),
-               .health(player_health),
+               .health(health),
                .ammo(ammo),
                .weapon_cd(weapon_cd),
                .score()
@@ -128,7 +128,7 @@ module top(
                 .pixel_out(pixel),
                 .world_pixel(world_pixel),
                 .weapon_cd(weapon_cd),
-                .player_health(player_health),
+                .health(health),
                 .game_state(game_state)
               );
 
