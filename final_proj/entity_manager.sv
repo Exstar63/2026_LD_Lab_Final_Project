@@ -207,6 +207,7 @@ module entity_manager(
       target_enable <= target_enable_next;
       for (int i=0; i<8; i++)
       begin
+        oam_data[i].id <= oam_data_next[i].id;
         oam_data[i].screen_x <= oam_data_next[i].screen_x;
         oam_data[i].screen_y <= oam_data_next[i].screen_y;
         oam_data[i].Dist <= oam_data_next[i].Dist;
