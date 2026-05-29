@@ -92,10 +92,12 @@ module top(
            .probe_x(probe_x),               // map_hit probe
            .probe_y(probe_y),
            .map_hit(map_hit),
-           .btn_up(btnU),                   // camera controls
-           .btn_down(btnD),
-           .btn_left(btnL),
-           .btn_right(btnR),
+           .mov_up(btnU | kbd_btn_W), // kb/btn input
+           .mov_down(btnD | kbd_btn_S),
+           .mov_left(kbd_btn_A),
+           .mov_right(kbd_btn_D),
+           .rot_left(btnL | kbd_btn_La),
+           .rot_right(btnR | kbd_btn_Ra),
            .frame_tick(frame_tick),
            .clk(clk),
            .rst_n(rst_n)
