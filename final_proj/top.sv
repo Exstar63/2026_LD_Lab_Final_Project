@@ -13,8 +13,8 @@ module top(
 
   // vga control flags
   logic clk_25MHz;
-  logic [11:0] pixel, wall_pixel, entity_pixel;
-  logic draw_sprite_en;
+  logic [11:0] pixel, world_pixel, wall_pixel, entity_pixel;
+  logic entity_draw_en;
   logic valid;
   logic v_blank;
 
@@ -34,8 +34,8 @@ module top(
     show_x = h_cnt>>1;
     show_y = v_cnt>>1;
     which_x = (v_blank) ? rendering_x : show_x ;
-    {vgaRed, vgaGreen, vgaBlue} = (valid==1'b1) ? pixel : 12'h0;
-    pixel = (draw_sprite_en) ? entity_pixel : wall_pixel;
+    {vgaRed, vgaGreen, vgaBlue} = (valid) ? pixel : 12'h0;      // from hud
+    world_pixel = (entity_draw_en) ? entity_pixel : wall_pixel; // to hud
   end
 
   // ray/player location map_hit chk/probe
@@ -54,6 +54,9 @@ module top(
   // game related comm
   logic kill_en;
   logic [4:0] kill_id;
+  logic [7:0] player_health, ammo;
+  logic [1:0] game_state;
+  logic [5:0] weapon_cd;
 
   // render related comm flag
   logic map_hit, start_ray, ray_done, write_enable;
@@ -110,11 +113,24 @@ module top(
                .kill_id(kill_id),
                .player_hit(), // world comm
                .enemy_killed(),
-               .game_state(),
-               .health(),
-               .ammo(),
+               .game_state(game_state),
+               .health(player_health),
+               .ammo(ammo),
+               .weapon_cd(weapon_cd),
                .score()
              );
+
+  hud_overlay hud_inst(
+                .clk(clk),
+                .rst_n(rst_n),
+                .show_x(show_x),
+                .show_y(show_y),
+                .pixel_out(pixel),
+                .world_pixel(world_pixel),
+                .weapon_cd(weapon_cd),
+                .player_health(player_health),
+                .game_state(game_state)
+              );
 
   camera cam_inst(
            .player_x_out(player_x),         // raycaster
@@ -245,7 +261,7 @@ module top(
                     .tex_rgb(tex_rgb),
                     .tex_addr(tex_addr),
                     .entity_rgb_out(entity_pixel),
-                    .entity_draw_en(draw_sprite_en)
+                    .entity_draw_en(entity_draw_en)
                   );
 
   entity_tex_rom entity_tex_inst(

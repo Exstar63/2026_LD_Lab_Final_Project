@@ -18,6 +18,7 @@ module game_logic(
     output logic [1:0] game_state,
     output logic [7:0] health,
     output logic [7:0] ammo,
+    output logic [5:0] weapon_cd,
     output logic [15:0] score
   );
 
@@ -30,8 +31,9 @@ module game_logic(
 
   localparam logic [7:0] MAX_HEALTH = 8'd100;
   localparam logic [7:0] MAX_AMMO = 8'd30;
-  localparam logic [7:0] DMG = 8'd20; // How much damage enemies do
+  localparam logic [7:0] DMG = 8'd20;
 
+  // shoot boxing
   logic [4:0] target_id;
   logic [15:0] dist_min;
   logic boxed;
@@ -62,7 +64,6 @@ module game_logic(
   logic [15:0] score_next;
   logic kill_en_next;
   logic [4:0] kill_id_next;
-  logic [5:0] weapon_cd;
   logic [5:0] weapon_cd_next;
   state_t state, state_next;
   always_comb
@@ -98,7 +99,7 @@ module game_logic(
 
         STATE_PLAY:
         begin
-          if (btn_shoot && (weapon_cd == 0) && (ammo > 0))
+          if (btn_shoot & (weapon_cd == 0) & (ammo > 0))
           begin
             // ammo_next = ammo - 1;
             weapon_cd_next = 6'd15; // 15f
