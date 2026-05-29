@@ -1,5 +1,6 @@
 typedef struct packed
         {
+          logic [4:0] id;
           logic signed [15:0] screen_x;
           logic signed [15:0] screen_y;
           logic [15:0] Dist;
@@ -27,7 +28,9 @@ module entity_manager(
     output logic [15:0] target_scale,
     output logic target_enable,
 
-    // entity renderer comm
+    // entity renderer/game_logic comm
+    input logic kill_en,
+    input logic [4:0] kill_id,
     output oam_entry_t oam_data [0:7] // max 8 entity
   );
 
@@ -36,7 +39,7 @@ module entity_manager(
   logic signed [15:0] ent_world_y [0:31];
   logic signed [15:0] ent_world_z [0:31];
   logic [15:0] ent_scale [0:31];
-  logic ent_enable [0:31];
+  logic [31:0] ent_enable;
   always_comb
   begin
     for (int i=4; i<32; i++)
@@ -45,7 +48,6 @@ module entity_manager(
       ent_world_y[i] = 16'sd0;
       ent_world_z[i] = 16'sd0;
       ent_scale[i] = 16'd0;
-      ent_enable[i] = 1'b0;
     end
 
     // ent_0
@@ -53,26 +55,24 @@ module entity_manager(
     ent_world_y[0] = 16'h0580;
     ent_world_z[0] = -16'sd80;
     ent_scale[0] = 16'd80;
-    ent_enable[0] = 1'b1;
 
     // ent_1
     ent_world_x[1] = 16'h0680;
     ent_world_y[1] = 16'h0580;
     ent_world_z[1] = -16'sd80;
     ent_scale[1] = 16'd80;
-    ent_enable[1] = 1'b1;
 
+    // ent_2
     ent_world_x[2] = 16'h0780;
     ent_world_y[2] = 16'h0580;
     ent_world_z[2] = -16'sd80;
     ent_scale[2] = 16'd80;
-    ent_enable[2] = 1'b1;
 
+    // ent_3
     ent_world_x[3] = 16'h0880;
     ent_world_y[3] = 16'h0580;
     ent_world_z[3] = -16'sd80;
     ent_scale[3] = 16'd80;
-    ent_enable[3] = 1'b1;
   end
 
   typedef enum logic [1:0] {
@@ -157,6 +157,7 @@ module entity_manager(
       begin
         if ((proj_show) & (proj_screen_x > -16'sd100) & (proj_screen_x <  16'sd420) & (oam_idx < 8)) // overflow fix
         begin
+          oam_data_next[oam_idx].id = ent_idx;
           oam_data_next[oam_idx].screen_x = proj_screen_x;
           oam_data_next[oam_idx].screen_y = proj_screen_y;
           oam_data_next[oam_idx].Dist = proj_dist;
@@ -188,6 +189,9 @@ module entity_manager(
       target_z <= 16'sd0;
       target_scale <= 16'd0;
       target_enable <= 1'b0;
+      ent_enable[3:0] <= 4'b1111;
+      for (int i=4; i<32; i++)
+        ent_enable[i] <= 1'b0;
       for (int i=0; i<8; i++)
         oam_data[i].valid <= 1'b0;
     end
@@ -209,6 +213,8 @@ module entity_manager(
         oam_data[i].step <= oam_data_next[i].step;
         oam_data[i].valid <= oam_data_next[i].valid;
       end
+      if (kill_en)
+        ent_enable[kill_id] <= 1'b0;
     end
   end
 endmodule

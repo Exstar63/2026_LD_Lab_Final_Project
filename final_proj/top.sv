@@ -1,7 +1,7 @@
 module top(
     input logic clk,
     input logic rst_n,
-    input logic btnU, btnD, btnL, btnR,
+    input logic btnU, btnD, btnL, btnR, btnC,
     inout logic PS2_DATA,
     inout logic PS2_CLK,
     output logic [3:0] vgaRed,
@@ -51,7 +51,11 @@ module top(
   logic kbd_btn_W, kbd_btn_A, kbd_btn_S, kbd_btn_D, kbd_btn_SP;
   logic kbd_btn_La, kbd_btn_Ra, kbd_btn_Ua, kbd_btn_Da;
 
-  // comm flag
+  // game related comm
+  logic kill_en;
+  logic [4:0] kill_id;
+
+  // render related comm flag
   logic map_hit, start_ray, ray_done, write_enable;
 
   // buffer packet
@@ -78,6 +82,39 @@ module top(
                   .clk1(clk_25MHz),
                   .clk22()
                 );
+
+  Keyboard_input keyboard_inst(
+                   .clk(clk),
+                   .rst_n(rst_n),
+                   .PS2_DATA(PS2_DATA),
+                   .PS2_CLK(PS2_CLK),
+                   .btn_W(kbd_btn_W),
+                   .btn_A(kbd_btn_A),
+                   .btn_S(kbd_btn_S),
+                   .btn_D(kbd_btn_D),
+                   .btn_SP(kbd_btn_SP),
+                   .btn_La(kbd_btn_La),
+                   .btn_Ra(kbd_btn_Ra),
+                   .btn_Ua(kbd_btn_Ua),
+                   .btn_Da(kbd_btn_Da)
+                 );
+
+  game_logic game_logic_inst(
+               .clk(clk),
+               .rst_n(rst_n),
+               .frame_tick(frame_tick),
+               .btn_start(btnC), // player control
+               .btn_shoot(kbd_btn_SP),
+               .oam_data(oam_data), // ent manager comm
+               .kill_en(kill_en),
+               .kill_id(kill_id),
+               .player_hit(), // world comm
+               .enemy_killed(),
+               .game_state(),
+               .health(),
+               .ammo(),
+               .score()
+             );
 
   camera cam_inst(
            .player_x_out(player_x),         // raycaster
@@ -173,6 +210,8 @@ module top(
                    .target_z(target_z),
                    .target_scale(target_scale),
                    .target_enable(target_enable),
+                   .kill_en(kill_en),
+                   .kill_id(kill_id),
                    .oam_data(oam_data)
                  );
 
@@ -224,22 +263,6 @@ module top(
                    .v_blank(v_blank),
                    .h_cnt(h_cnt),
                    .v_cnt(v_cnt)
-                 );
-
-  Keyboard_input keyboard_inst(
-                   .clk(clk),
-                   .rst_n(rst_n),
-                   .PS2_DATA(PS2_DATA),
-                   .PS2_CLK(PS2_CLK),
-                   .btn_W(kbd_btn_W),
-                   .btn_A(kbd_btn_A),
-                   .btn_S(kbd_btn_S),
-                   .btn_D(kbd_btn_D),
-                   .btn_SP(kbd_btn_SP),
-                   .btn_La(kbd_btn_La),
-                   .btn_Ra(kbd_btn_Ra),
-                   .btn_Ua(kbd_btn_Ua),
-                   .btn_Da(kbd_btn_Da)
                  );
 
 endmodule
