@@ -1,19 +1,21 @@
 module hud_overlay (
-    input  logic clk,
-    input  logic rst_n,
+    input logic clk,
+    input logic rst_n,
 
     // vga comm
-    input  logic [8:0] show_x,
-    input  logic [8:0] show_y,
+    input logic [8:0] show_x,
+    input logic [8:0] show_y,
     output logic [11:0] pixel_out,
 
     // ent/wall pixel in
-    input  logic [11:0] world_pixel,
+    input logic [11:0] world_pixel,
 
     // game logic comm
-    input  logic [5:0]  weapon_cd,
-    input  logic [7:0]  health,
-    input  logic [1:0]  game_state
+    input logic [5:0] weapon_cd,
+    input logic [7:0] health,
+    input logic [1:0] game_state,
+    input logic [7:0] ammo,
+    input logic [15:0] score
   );
 
   localparam logic [11:0] TP_COLOR = 12'hF0F; // Magic Pink
@@ -37,11 +39,11 @@ module hud_overlay (
     $readmemh("gun_01_tex.mem", gun_rom);
   end
 
-	// gun box
+  // gun box
   logic is_gun;
   logic [7:0] gun_recoil_dy;
   logic [9:0] temp_gun_x, temp_gun_y;
-	logic [14:0] rom_addr;
+  logic [14:0] rom_addr;
   always_comb
   begin
     is_gun = 1'b0;
@@ -70,13 +72,23 @@ module hud_overlay (
     end
   end
 
-	// reg output signal
+  logic is_text;
+  ui_text U_LUT_text (
+            .show_x(show_x),
+            .show_y(show_y),
+            .ammo(ammo),
+            .score(score),
+            .is_text(is_text)
+          );
+
+  // reg output signal
   logic is_gun_r;
   logic is_crosshair_r;
   logic is_dmg_r;
+  logic is_text_r;
   logic [1:0] game_state_r;
   logic [11:0] world_pixel_r;
-	logic [11:0] gun_tex_rgb;
+  logic [11:0] gun_tex_rgb;
   always_ff @(posedge clk)
   begin
     if (~rst_n)
@@ -84,22 +96,24 @@ module hud_overlay (
       is_gun_r <= 1'b0;
       is_crosshair_r <= 1'b0;
       is_dmg_r <= 1'b0;
+      is_text_r <= 1'b0;
       game_state_r <= 2'd0;
-			world_pixel_r <= 12'h000;
+      world_pixel_r <= 12'h000;
       gun_tex_rgb <= 12'h000;
     end
     else
     begin
-			is_gun_r <= is_gun;
-			is_crosshair_r <= is_crosshair;
-			is_dmg_r <= is_dmg;
-			game_state_r <= game_state;
-			world_pixel_r <= world_pixel;
+      is_gun_r <= is_gun;
+      is_crosshair_r <= is_crosshair;
+      is_dmg_r <= is_dmg;
+      is_text_r <= is_text;
+      game_state_r <= game_state;
+      world_pixel_r <= world_pixel;
       gun_tex_rgb <= gun_rom[rom_addr];
     end
   end
 
-	// final mixer
+  // final mixer
   always_comb
   begin
     pixel_out = world_pixel_r;
@@ -107,14 +121,19 @@ module hud_overlay (
     if (game_state_r == 2'd2)
     begin
       pixel_out = 12'hF00; // DEAD
-		end
-    
-		else if (is_crosshair_r)
+    end
+
+    else if (is_text_r)
+    begin
+      pixel_out = 12'hFF0;
+    end
+
+    else if (is_crosshair_r)
     begin
       pixel_out = 12'h0F0; // light green
     end
-    
-		else if (is_gun_r && (gun_tex_rgb != TP_COLOR))
+
+    else if (is_gun_r && (gun_tex_rgb != TP_COLOR))
     begin
       pixel_out = gun_tex_rgb;
     end

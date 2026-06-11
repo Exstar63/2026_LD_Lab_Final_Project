@@ -55,6 +55,7 @@ module top(
   logic kill_en;
   logic [4:0] kill_id;
   logic [7:0] health, ammo;
+  logic [15:0] score;
   logic [1:0] game_state;
   logic [5:0] weapon_cd;
 
@@ -117,7 +118,7 @@ module top(
                .health(health),
                .ammo(ammo),
                .weapon_cd(weapon_cd),
-               .score()
+               .score(score)
              );
 
   hud_overlay hud_inst(
@@ -129,7 +130,9 @@ module top(
                 .world_pixel(world_pixel),
                 .weapon_cd(weapon_cd),
                 .health(health),
-                .game_state(game_state)
+                .game_state(game_state),
+                .ammo(ammo),
+                .score(score)
               );
 
   camera cam_inst(

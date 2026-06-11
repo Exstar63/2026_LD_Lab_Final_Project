@@ -101,8 +101,8 @@ module game_logic(
         begin
           if (btn_shoot & (weapon_cd == 0) & (ammo > 0))
           begin
-            // ammo_next = ammo - 1;
-            weapon_cd_next = 6'd15; // 15f
+            ammo_next = ammo - 1;
+            weapon_cd_next = 6'd30;
             if (boxed)
             begin
               kill_en_next = 1'b1;
