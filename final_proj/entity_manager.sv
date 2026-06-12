@@ -93,7 +93,7 @@ module entity_manager(
   logic target_enable_next;
   oam_entry_t oam_data_next [0:7];
 
-  // FSM
+  // render/show/placement FSM
   always_comb
   begin
     state_next = state;
