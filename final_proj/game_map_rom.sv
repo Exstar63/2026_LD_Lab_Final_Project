@@ -1,4 +1,4 @@
-module map_rom(
+module game_map_rom(
     input  logic clk,
     input  logic [3:0] map_x,
     input  logic [3:0] map_y,

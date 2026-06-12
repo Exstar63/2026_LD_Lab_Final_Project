@@ -1,4 +1,4 @@
-module speaker_control(
+module audio_speaker_control(
     output logic audio_mclk, // master clock
     output logic audio_lrck, // left-right clock
     output logic audio_sck,   // serial clock

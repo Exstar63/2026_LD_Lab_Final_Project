@@ -73,7 +73,7 @@ module hud_overlay (
   end
 
   logic is_text;
-  ui_text U_LUT_text (
+  hud_ui_text U_LUT_text (
             .show_x(show_x),
             .show_y(show_y),
             .ammo(ammo),

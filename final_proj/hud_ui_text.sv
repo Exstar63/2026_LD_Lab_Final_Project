@@ -1,4 +1,4 @@
-module ui_text (
+module hud_ui_text (
     input logic [8:0] show_x,
     input logic [8:0] show_y,
     input logic [7:0] ammo,

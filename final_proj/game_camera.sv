@@ -1,4 +1,4 @@
-module camera(
+module game_camera(
     input logic clk,
     input logic rst_n,
 

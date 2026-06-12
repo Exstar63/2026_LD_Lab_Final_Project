@@ -17,10 +17,17 @@ module top(
 
   // vga control flags
   logic clk_25MHz;
+  logic clk22_unused;
   logic [11:0] pixel, world_pixel, wall_pixel, entity_pixel;
   logic entity_draw_en;
   logic valid;
   logic v_blank;
+
+  logic player_hit_unused;
+  logic enemy_killed_unused;
+
+  assign player_hit_unused = 1'b0;
+  assign enemy_killed_unused = 1'b0;
 
   // frame tick
   logic frame_tick, v_blank_prev;
@@ -89,7 +96,7 @@ module top(
   clock_divisor clk_wiz_0_inst(
                   .clk(clk),
                   .clk1(clk_25MHz),
-                  .clk22()
+                  .clk22(clk22_unused)
                 );
 
   Keyboard_input keyboard_inst(
@@ -117,9 +124,9 @@ module top(
                .oam_data(oam_data), // ent manager comm
                .kill_en(kill_en),
                .kill_id(kill_id),
-               .player_hit(), // world comm
+               .player_hit(player_hit_unused), // world comm
                .trigger(trigger),
-               .enemy_killed(),
+               .enemy_killed(enemy_killed_unused),
                .game_state(game_state),
                .health(health),
                .ammo(ammo),
@@ -127,21 +134,7 @@ module top(
                .score(score)
              );
 
-  hud_overlay hud_inst(
-                .clk(clk),
-                .rst_n(rst_n),
-                .show_x(show_x),
-                .show_y(show_y),
-                .pixel_out(pixel),
-                .world_pixel(world_pixel),
-                .weapon_cd(weapon_cd),
-                .health(health),
-                .game_state(game_state),
-                .ammo(ammo),
-                .score(score)
-              );
-
-  camera cam_inst(
+  game_camera cam_inst(
            .player_x_out(player_x),         // raycaster
            .player_y_out(player_y),
            .cos_p(cos_p),
@@ -165,14 +158,28 @@ module top(
            .rst_n(rst_n)
          );
 
-  map_rom map_inst(
+  game_map_rom map_inst(
             .map_x((v_blank)? hit_chk_x : probe_x),
             .map_y((v_blank)? hit_chk_y : probe_y),
             .map_hit(map_hit),
             .clk(clk)
           );
+  
+  hud_overlay hud_inst(
+                .clk(clk),
+                .rst_n(rst_n),
+                .show_x(show_x),
+                .show_y(show_y),
+                .pixel_out(pixel),
+                .world_pixel(world_pixel),
+                .weapon_cd(weapon_cd),
+                .health(health),
+                .game_state(game_state),
+                .ammo(ammo),
+                .score(score)
+              );
 
-  dda_raycaster dda_raycaseter_inst(
+  dda_raycaster dda_raycaster_inst(
                   .player_x(player_x),  // camera
                   .player_y(player_y),
                   .ray_angle(rendering_angle),
@@ -191,7 +198,7 @@ module top(
                   .rst_n(rst_n)
                 );
 
-  dist_buffer dist_buffer_mem(
+  dda_dist_buffer dist_buffer_mem(
                 .write_enable(write_enable),    // scanner in
                 .write_addr(rendering_x),
                 .write_data(buff_in_packet),  // dda_raycaster in
@@ -288,7 +295,7 @@ module top(
       .audio_out_right(audio_right)
   );
   
-    speaker_control audio_sp_ctl_inst(
+  audio_speaker_control audio_sp_ctl_inst(
       .audio_mclk(audio_mclk),
       .audio_lrck(audio_lrck),
       .audio_sck(audio_sck),
