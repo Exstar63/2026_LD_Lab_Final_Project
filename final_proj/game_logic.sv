@@ -15,6 +15,7 @@ module game_logic(
     // global comm
     input logic player_hit,
     input logic enemy_killed,
+    output logic trigger,
     output logic [1:0] game_state,
     output logic [7:0] health,
     output logic [7:0] ammo,
@@ -62,7 +63,7 @@ module game_logic(
   // main game logic
   logic [7:0] health_next, ammo_next;
   logic [15:0] score_next;
-  logic kill_en_next;
+  logic kill_en_next, trigger_next;
   logic [4:0] kill_id_next;
   logic [5:0] weapon_cd_next;
   state_t state, state_next;
@@ -71,6 +72,7 @@ module game_logic(
     game_state = state;
     state_next = state;
     health_next = health;
+    trigger_next = 1'b0;
     ammo_next = ammo;
     score_next = score;
     weapon_cd_next = weapon_cd;
@@ -101,6 +103,7 @@ module game_logic(
         begin
           if (btn_shoot & (weapon_cd == 0) & (ammo > 0))
           begin
+            trigger_next = 1'b1;
             ammo_next = ammo - 1;
             weapon_cd_next = 6'd30;
             if (boxed)
@@ -108,6 +111,10 @@ module game_logic(
               kill_en_next = 1'b1;
               kill_id_next = target_id;
               score_next = score + 100;
+              if (score_next >= 16'd1600)
+              begin // 16 enemies * 100
+                state_next = STATE_WIN;
+              end
             end
           end
 
@@ -165,6 +172,7 @@ module game_logic(
     begin
       state <= state_next;
       health <= health_next;
+      trigger <= trigger_next;
       ammo <= ammo_next;
       score <= score_next;
       weapon_cd <= weapon_cd_next;

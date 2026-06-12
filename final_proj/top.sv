@@ -8,7 +8,11 @@ module top(
     output logic [3:0] vgaGreen,
     output logic [3:0] vgaBlue,
     output logic hsync,
-    output logic vsync
+    output logic vsync,
+    output logic audio_mclk,
+    output logic audio_lrck,
+    output logic audio_sck,
+    output logic audio_sdin
   );
 
   // vga control flags
@@ -52,12 +56,13 @@ module top(
   logic kbd_btn_La, kbd_btn_Ra, kbd_btn_Ua, kbd_btn_Da;
 
   // game related comm
-  logic kill_en;
+  logic kill_en, trigger;
   logic [4:0] kill_id;
   logic [7:0] health, ammo;
   logic [15:0] score;
   logic [1:0] game_state;
   logic [5:0] weapon_cd;
+  logic [15:0] audio_left, audio_right;
 
   // render related comm flag
   logic map_hit, start_ray, ray_done, write_enable;
@@ -113,6 +118,7 @@ module top(
                .kill_en(kill_en),
                .kill_id(kill_id),
                .player_hit(), // world comm
+               .trigger(trigger),
                .enemy_killed(),
                .game_state(game_state),
                .health(health),
@@ -272,6 +278,26 @@ module top(
                    .addr(tex_addr),
                    .color_out(tex_rgb)
                  );
+
+  audio_gen audio_gen_inst(
+      .clk(clk),
+      .rst_n(rst_n),
+      .trigger(trigger),
+      .death(kill_en),
+      .audio_out_left(audio_left),
+      .audio_out_right(audio_right)
+  );
+  
+    speaker_control audio_sp_ctl_inst(
+      .audio_mclk(audio_mclk),
+      .audio_lrck(audio_lrck),
+      .audio_sck(audio_sck),
+      .audio_sdin(audio_sdin),
+      .audio_in_left(audio_left),
+      .audio_in_right(audio_right),
+      .clk(clk),
+      .rst_n(rst_n)
+  );
 
   vga_controller vga_inst(
                    .pclk(clk_25MHz),
