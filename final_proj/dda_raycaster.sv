@@ -29,7 +29,7 @@ module dda_raycaster(
             INIT_2    = 3'd2,
             STEP      = 3'd3,
             MEM_WAIT  = 3'd4,
-            CHECK_HIT = 3'd5,
+            CHK_HIT   = 3'd5,
             CALC_DIST = 3'd6
           } state_t;
 
@@ -169,9 +169,9 @@ module dda_raycaster(
       end
 
       MEM_WAIT:
-        state_next = CHECK_HIT; // map/trig LUT rom time buffer
+        state_next = CHK_HIT; // map/trig LUT rom time buffer
 
-      CHECK_HIT:
+      CHK_HIT:
       begin
         if (map_hit)
           state_next = CALC_DIST;
