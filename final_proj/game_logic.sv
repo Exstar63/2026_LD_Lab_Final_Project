@@ -124,7 +124,7 @@ module game_logic(
           end
           else if (btn_reload)
           begin
-            ammo_next = 30;
+            ammo_next = MAX_AMMO;
             weapon_cd_next = 6'd60;
           end
         end
