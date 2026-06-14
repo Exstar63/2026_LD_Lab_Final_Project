@@ -13,6 +13,10 @@ module entity_manager(
     input logic rst_n,
     input logic frame_tick,
 
+    // camera comm
+    input logic signed [15:0] player_x,
+    input logic signed [15:0] player_y,
+
     // projection input comm
     input logic signed [15:0] proj_screen_x,
     input logic signed [15:0] proj_screen_y,
@@ -34,46 +38,12 @@ module entity_manager(
     output oam_entry_t oam_data [0:7] // max 8 entity
   );
 
-  // local (temp) entity arr.
+  // local entity
   logic signed [15:0] ent_world_x [0:31];
   logic signed [15:0] ent_world_y [0:31];
   logic signed [15:0] ent_world_z [0:31];
   logic [15:0] ent_scale [0:31];
   logic [31:0] ent_enable;
-  always_comb
-  begin
-    for (int i=4; i<32; i++)
-    begin
-      ent_world_x[i] = 16'sd0;
-      ent_world_y[i] = 16'sd0;
-      ent_world_z[i] = 16'sd0;
-      ent_scale[i] = 16'd0;
-    end
-
-    // ent_0
-    ent_world_x[0] = 16'h0580;
-    ent_world_y[0] = 16'h0580;
-    ent_world_z[0] = -16'sd80;
-    ent_scale[0] = 16'd80;
-
-    // ent_1
-    ent_world_x[1] = 16'h0680;
-    ent_world_y[1] = 16'h0580;
-    ent_world_z[1] = -16'sd80;
-    ent_scale[1] = 16'd80;
-
-    // ent_2
-    ent_world_x[2] = 16'h0780;
-    ent_world_y[2] = 16'h0580;
-    ent_world_z[2] = -16'sd80;
-    ent_scale[2] = 16'd80;
-
-    // ent_3
-    ent_world_x[3] = 16'h0880;
-    ent_world_y[3] = 16'h0580;
-    ent_world_z[3] = -16'sd80;
-    ent_scale[3] = 16'd80;
-  end
 
   typedef enum logic [1:0] {
             IDLE,
@@ -92,6 +62,13 @@ module entity_manager(
   logic [15:0] target_scale_next;
   logic target_enable_next;
   oam_entry_t oam_data_next [0:7];
+
+  // ai mov
+  localparam logic signed [15:0] ENEMY_SPEED = 16'sd8;
+  logic [2:0] ai_cnt_p;
+  logic ai_mov_p;
+  logic ai_calc_en;
+  logic [4:0] ai_calc_idx;
 
   // render/show/placement FSM
   always_comb
@@ -143,7 +120,6 @@ module entity_manager(
         end
       end
 
-
       WAIT: // wait for LUT
       begin
         target_enable_next = 1'b0;
@@ -189,12 +165,66 @@ module entity_manager(
       target_z <= 16'sd0;
       target_scale <= 16'd0;
       target_enable <= 1'b0;
-      ent_enable[3:0] <= 4'b1111;
-      for (int i=4; i<32; i++)
-        ent_enable[i] <= 1'b0;
+      ent_enable[7:0] <= 8'b11111111;
+
+      ai_cnt_p <= 3'd0;
+      ai_mov_p <= 1'b0;
+      ai_calc_en <= 1'b0;
+      ai_calc_idx <= 3'd0;
+
       for (int i=0; i<8; i++)
         oam_data[i].valid <= 1'b0;
+
+      for (int i=8; i<32; i++)
+      begin
+        ent_enable[i] <= 1'b0;
+        ent_world_x[i] <= 16'sd0;
+        ent_world_y[i] <= 16'sd0;
+        ent_world_z[i] <= 16'sd0;
+        ent_scale[i] <= 16'd0;
+      end
+
+      ent_world_x[0] <= 16'h0D80;
+      ent_world_y[0] <= 16'h0480;
+      ent_world_z[0] <= -16'sd80;
+      ent_scale[0]   <= 16'd80;
+
+      ent_world_x[1] <= 16'h0D80;
+      ent_world_y[1] <= 16'h0280;
+      ent_world_z[1] <= -16'sd80;
+      ent_scale[1]   <= 16'd80;
+
+      ent_world_x[2] <= 16'h0180;
+      ent_world_y[2] <= 16'h0680;
+      ent_world_z[2] <= -16'sd80;
+      ent_scale[2]   <= 16'd80;
+
+      ent_world_x[3] <= 16'h0A80;
+      ent_world_y[3] <= 16'h0480;
+      ent_world_z[3] <= -16'sd80;
+      ent_scale[3]   <= 16'd80;
+
+      ent_world_x[4] <= 16'h0D80;
+      ent_world_y[4] <= 16'h0880;
+      ent_world_z[4] <= -16'sd80;
+      ent_scale[4]   <= 16'd80;
+
+      ent_world_x[5] <= 16'h0280;
+      ent_world_y[5] <= 16'h0D80;
+      ent_world_z[5] <= -16'sd80;
+      ent_scale[5]   <= 16'd80;
+
+      ent_world_x[6] <= 16'h0880;
+      ent_world_y[6] <= 16'h0C80;
+      ent_world_z[6] <= -16'sd80;
+      ent_scale[6]   <= 16'd80;
+
+      ent_world_x[7] <= 16'h0D80;
+      ent_world_y[7] <= 16'h0D80;
+      ent_world_z[7] <= -16'sd80;
+      ent_scale[7]   <= 16'd80;
     end
+
     else
     begin
       state <= state_next;
@@ -216,6 +246,48 @@ module entity_manager(
       end
       if (kill_en)
         ent_enable[kill_id] <= 1'b0;
+
+      if (frame_tick)
+      begin
+        if (ai_cnt_p == 3'd3)
+        begin
+          ai_cnt_p <= 3'd0;
+          ai_mov_p <= 1'b1;
+        end
+        else
+        begin
+          ai_cnt_p <= ai_cnt_p + 1'b1;
+          ai_mov_p <= 1'b0;
+        end
+      end
+      else
+        ai_mov_p <= 1'b0;
+
+      // entity mov
+      if (ai_mov_p && !ai_calc_en)
+      begin
+        ai_calc_en <= 1'b1;
+        ai_calc_idx <= 5'd0;
+      end
+      else if (ai_calc_en)
+      begin
+        if (ent_enable[ai_calc_idx])
+        begin
+          if (ent_world_x[ai_calc_idx] < player_x)
+            ent_world_x[ai_calc_idx] <= ent_world_x[ai_calc_idx] + ENEMY_SPEED;
+          else if (ent_world_x[ai_calc_idx] > player_x)
+            ent_world_x[ai_calc_idx] <= ent_world_x[ai_calc_idx] - ENEMY_SPEED;
+          if (ent_world_y[ai_calc_idx] < player_y)
+            ent_world_y[ai_calc_idx] <= ent_world_y[ai_calc_idx] + ENEMY_SPEED;
+          else if (ent_world_y[ai_calc_idx] > player_y)
+            ent_world_y[ai_calc_idx] <= ent_world_y[ai_calc_idx] - ENEMY_SPEED;
+        end
+        if (ai_calc_idx == 5'd31)
+          ai_calc_en <= 1'b0;
+        else
+          ai_calc_idx <= ai_calc_idx + 1'b1;
+      end
+
     end
   end
 endmodule

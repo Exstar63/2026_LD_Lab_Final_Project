@@ -78,6 +78,7 @@ module hud_overlay (
             .show_y(show_y),
             .ammo(ammo),
             .score(score),
+            .game_state(game_state),
             .is_text(is_text)
           );
 
@@ -128,7 +129,7 @@ module hud_overlay (
       pixel_out = 12'hFF0;
     end
 
-    else if (is_crosshair_r)
+    else if (is_crosshair_r & (game_state==2'd1))
     begin
       pixel_out = 12'h0F0; // light green
     end

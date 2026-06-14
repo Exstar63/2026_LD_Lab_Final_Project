@@ -6,6 +6,7 @@ module game_logic(
     // p control input
     input logic btn_start,
     input logic btn_shoot,
+    input logic btn_reload,
 
     // ent manager comm
     input oam_entry_t oam_data [0:7],
@@ -20,7 +21,8 @@ module game_logic(
     output logic [7:0] health,
     output logic [7:0] ammo,
     output logic [5:0] weapon_cd,
-    output logic [15:0] score
+    output logic [15:0] score,
+    output logic [3:0] enemy_count
   );
 
   typedef enum logic [1:0] {
@@ -31,7 +33,7 @@ module game_logic(
           } state_t;
 
   localparam logic [7:0] MAX_HEALTH = 8'd100;
-  localparam logic [7:0] MAX_AMMO = 8'd30;
+  localparam logic [7:0] MAX_AMMO = 8'd6;
   localparam logic [7:0] DMG = 8'd20;
 
   // shoot boxing
@@ -66,6 +68,7 @@ module game_logic(
   logic kill_en_next, trigger_next;
   logic [4:0] kill_id_next;
   logic [5:0] weapon_cd_next;
+  logic [3:0] enemy_count_next;
   state_t state, state_next;
   always_comb
   begin
@@ -76,6 +79,7 @@ module game_logic(
     ammo_next = ammo;
     score_next = score;
     weapon_cd_next = weapon_cd;
+    enemy_count_next = enemy_count;
     kill_en_next = 1'b0;
     kill_id_next = target_id;
 
@@ -110,41 +114,19 @@ module game_logic(
             begin
               kill_en_next = 1'b1;
               kill_id_next = target_id;
-              score_next = score + 100;
+              enemy_count_next = enemy_count - 4'd1;
+              score_next = score + 200;
               if (score_next >= 16'd1600)
-              begin // 16 enemies * 100
+              begin
                 state_next = STATE_WIN;
               end
             end
           end
-
-          if (player_hit)
+          else if (btn_reload)
           begin
-            if (health > DMG)
-            begin
-              health_next = health - DMG;
-            end
-            else
-            begin
-              health_next = 8'd0;
-              state_next = STATE_DEAD; // Player died!
-            end
+            ammo_next = 30;
+            weapon_cd_next = 6'd60;
           end
-
-          if (enemy_killed)
-          begin
-            score_next = score + 100;
-            if (score_next >= 16'd1600)
-            begin // 16 enemies * 100
-              state_next = STATE_WIN;
-            end
-          end
-        end
-
-        STATE_DEAD:
-        begin
-          if (btn_start)
-            state_next = STATE_MENU;
         end
 
         STATE_WIN:
@@ -165,6 +147,7 @@ module game_logic(
       ammo <= MAX_AMMO;
       score <= 16'd0;
       weapon_cd <= 6'd0;
+      enemy_count <= 4'd8;
       kill_en <= 1'b0;
       kill_id <= 5'd0;
     end
@@ -176,6 +159,7 @@ module game_logic(
       ammo <= ammo_next;
       score <= score_next;
       weapon_cd <= weapon_cd_next;
+      enemy_count <= enemy_count_next;
       kill_en <= kill_en_next;
       kill_id <= kill_id_next;
     end

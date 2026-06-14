@@ -12,7 +12,9 @@ module top(
     output logic audio_mclk,
     output logic audio_lrck,
     output logic audio_sck,
-    output logic audio_sdin
+    output logic audio_sdin,
+    output logic [7:0] segs,
+    output logic [3:0] ssd_ctl
   );
 
   // vga control flags
@@ -23,9 +25,11 @@ module top(
   logic valid;
   logic v_blank;
 
+  // ssd wire
+  logic [3:0] ssd_in;
+
   logic player_hit_unused;
   logic enemy_killed_unused;
-
   assign player_hit_unused = 1'b0;
   assign enemy_killed_unused = 1'b0;
 
@@ -59,7 +63,7 @@ module top(
   logic [15:0] corr_coef;
 
   // keyboard control
-  logic kbd_btn_W, kbd_btn_A, kbd_btn_S, kbd_btn_D, kbd_btn_SP;
+  logic kbd_btn_W, kbd_btn_A, kbd_btn_S, kbd_btn_D, kbd_btn_R, kbd_btn_SP;
   logic kbd_btn_La, kbd_btn_Ra, kbd_btn_Ua, kbd_btn_Da;
 
   // game related comm
@@ -70,6 +74,7 @@ module top(
   logic [1:0] game_state;
   logic [5:0] weapon_cd;
   logic [15:0] audio_left, audio_right;
+  logic [3:0] enemy_count;
 
   // render related comm flag
   logic map_hit, start_ray, ray_done, write_enable;
@@ -108,6 +113,7 @@ module top(
                    .btn_A(kbd_btn_A),
                    .btn_S(kbd_btn_S),
                    .btn_D(kbd_btn_D),
+                   .btn_R(kbd_btn_R),
                    .btn_SP(kbd_btn_SP),
                    .btn_La(kbd_btn_La),
                    .btn_Ra(kbd_btn_Ra),
@@ -121,6 +127,7 @@ module top(
                .frame_tick(frame_tick),
                .btn_start(btnC), // player control
                .btn_shoot(kbd_btn_SP),
+               .btn_reload(kbd_btn_R),
                .oam_data(oam_data), // ent manager comm
                .kill_en(kill_en),
                .kill_id(kill_id),
@@ -131,40 +138,41 @@ module top(
                .health(health),
                .ammo(ammo),
                .weapon_cd(weapon_cd),
-               .score(score)
+               .score(score),
+               .enemy_count(enemy_count)
              );
 
   game_camera cam_inst(
-           .player_x_out(player_x),         // raycaster
-           .player_y_out(player_y),
-           .cos_p(cos_p),
-           .sin_p(sin_p),
-           .ray_angle_out(rendering_angle),
-           .rayDirX_out(rayDirX),
-           .rayDirY_out(rayDirY),
-           .corr_coef(corr_coef),
-           .rendering_x(which_x),           // scanner in
-           .probe_x(probe_x),               // map_hit probe
-           .probe_y(probe_y),
-           .map_hit(map_hit),
-           .mov_up(btnU | kbd_btn_W), // kb/btn input
-           .mov_down(btnD | kbd_btn_S),
-           .mov_left(kbd_btn_A),
-           .mov_right(kbd_btn_D),
-           .rot_left(btnL | kbd_btn_La),
-           .rot_right(btnR | kbd_btn_Ra),
-           .frame_tick(frame_tick),
-           .clk(clk),
-           .rst_n(rst_n)
-         );
+                .player_x_out(player_x),         // raycaster
+                .player_y_out(player_y),
+                .cos_p(cos_p),
+                .sin_p(sin_p),
+                .ray_angle_out(rendering_angle),
+                .rayDirX_out(rayDirX),
+                .rayDirY_out(rayDirY),
+                .corr_coef(corr_coef),
+                .rendering_x(which_x),           // scanner in
+                .probe_x(probe_x),               // map_hit probe
+                .probe_y(probe_y),
+                .map_hit(map_hit),
+                .mov_up(btnU | kbd_btn_W), // kb/btn input
+                .mov_down(btnD | kbd_btn_S),
+                .mov_left(kbd_btn_A),
+                .mov_right(kbd_btn_D),
+                .rot_left(btnL | kbd_btn_La),
+                .rot_right(btnR | kbd_btn_Ra),
+                .frame_tick(frame_tick),
+                .clk(clk),
+                .rst_n(rst_n)
+              );
 
   game_map_rom map_inst(
-            .map_x((v_blank)? hit_chk_x : probe_x),
-            .map_y((v_blank)? hit_chk_y : probe_y),
-            .map_hit(map_hit),
-            .clk(clk)
-          );
-  
+                 .map_x((v_blank)? hit_chk_x : probe_x),
+                 .map_y((v_blank)? hit_chk_y : probe_y),
+                 .map_hit(map_hit),
+                 .clk(clk)
+               );
+
   hud_overlay hud_inst(
                 .clk(clk),
                 .rst_n(rst_n),
@@ -199,13 +207,13 @@ module top(
                 );
 
   dda_dist_buffer dist_buffer_mem(
-                .write_enable(write_enable),    // scanner in
-                .write_addr(rendering_x),
-                .write_data(buff_in_packet),  // dda_raycaster in
-                .read_addr(show_x),             // vga_ctrl in
-                .read_data(buff_out_packet),  // renderer out
-                .clk(clk)
-              );
+                    .write_enable(write_enable),    // scanner in
+                    .write_addr(rendering_x),
+                    .write_data(buff_in_packet),  // dda_raycaster in
+                    .read_addr(show_x),             // vga_ctrl in
+                    .read_data(buff_out_packet),  // renderer out
+                    .clk(clk)
+                  );
 
   dda_scanner dda_scanner_inst(
                 .rendering_x(rendering_x),   // -> camera/buffer -> raycaster
@@ -229,8 +237,10 @@ module top(
 
   entity_manager entity_manager_inst(
                    .clk(clk),
-                   .rst_n(rst_n),
+                   .rst_n(rst_n & (game_state==2'd1)),
                    .frame_tick(frame_tick),
+                   .player_x(player_x),
+                   .player_y(player_y),
                    .proj_screen_x(proj_screen_x),
                    .proj_screen_y(proj_screen_y),
                    .proj_dist(proj_dist),
@@ -249,7 +259,7 @@ module top(
 
   entity_projection entity_projection_inst(
                       .clk(clk),
-                      .rst_n(rst_n),
+                      .rst_n(rst_n & (game_state==2'd1)),
                       .p_x($signed(player_x)),
                       .p_y($signed(player_y)),
                       .cos_p(cos_p),
@@ -269,7 +279,7 @@ module top(
 
   entity_renderer entity_render_inst(
                     .clk(clk),
-                    .rst_n(rst_n),
+                    .rst_n(rst_n & (game_state==2'd1)),
                     .show_x(show_x),
                     .show_y(show_y),
                     .wall_dist(renderDist),
@@ -287,24 +297,39 @@ module top(
                  );
 
   audio_gen audio_gen_inst(
-      .clk(clk),
-      .rst_n(rst_n),
-      .trigger(trigger),
-      .death(kill_en),
-      .audio_out_left(audio_left),
-      .audio_out_right(audio_right)
-  );
-  
+              .clk(clk),
+              .rst_n(rst_n),
+              .trigger(trigger),
+              .death(kill_en),
+              .audio_out_left(audio_left),
+              .audio_out_right(audio_right)
+            );
+
   audio_speaker_control audio_sp_ctl_inst(
-      .audio_mclk(audio_mclk),
-      .audio_lrck(audio_lrck),
-      .audio_sck(audio_sck),
-      .audio_sdin(audio_sdin),
-      .audio_in_left(audio_left),
-      .audio_in_right(audio_right),
-      .clk(clk),
-      .rst_n(rst_n)
-  );
+                          .audio_mclk(audio_mclk),
+                          .audio_lrck(audio_lrck),
+                          .audio_sck(audio_sck),
+                          .audio_sdin(audio_sdin),
+                          .audio_in_left(audio_left),
+                          .audio_in_right(audio_right),
+                          .clk(clk),
+                          .rst_n(rst_n)
+                        );
+
+  scan_ctl scan_ctl_inst(
+             .ssd_ctl(ssd_ctl),
+             .ssd_in(ssd_in),
+             .in0(),              // LL
+             .in1(),              // L
+             .in2(),              // R
+             .in3(enemy_count),   // RR
+             .ssd_ctl_en(2'b11)
+           );
+
+  display ssdisplay_inst(
+            .segs(segs),
+            .bin(ssd_in)
+          );
 
   vga_controller vga_inst(
                    .pclk(clk_25MHz),

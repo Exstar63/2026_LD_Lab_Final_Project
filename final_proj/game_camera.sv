@@ -68,7 +68,7 @@ module game_camera(
                       );
 
   // mov const
-  localparam logic [15:0] MOVE_SPEED = 16'h0004;  // ~0.1 units in Q8.8
+  localparam logic [15:0] MOVE_SPEED = 16'h0006;  // ~0.1 units in Q8.8
   localparam logic [7:0] TURN_SPEED = 8'd2;       // 2 BAM steps
 
   // mov state regs

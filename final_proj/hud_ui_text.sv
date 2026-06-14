@@ -3,6 +3,7 @@ module hud_ui_text (
     input logic [8:0] show_y,
     input logic [7:0] ammo,
     input logic [15:0] score,
+    input  logic [1:0] game_state,
     output logic is_text
   );
 
@@ -16,24 +17,57 @@ module hud_ui_text (
   assign score_d = (score / 10)   % 10;
   assign score_o = score % 10;
 
-  logic [7:0] font_rom [0:79];
+  logic [7:0] font_rom [0:136];
   initial
     $readmemh("numbers.mem", font_rom);
 
-  logic [3:0] temp_dig;
+  // box
+  logic [4:0] temp_dig;
   logic [4:0] temp_x, temp_y;
   logic [2:0] tex_x, tex_y;
-  logic [6:0] tex_addr;
+  logic [7:0] tex_addr;
   logic [7:0] tex_data;
+  logic big_en;
 
   always_comb
   begin
     is_text = 1'b0;
-    temp_dig = 4'd0;
+    temp_dig = 5'd0;
     temp_x = 5'd0;
     temp_y = 5'd0;
+    big_en = 0;
 
-    if (show_y >= 210 && show_y <= 225) // ammo
+    if (game_state == 2'd0 && show_y >= 104 && show_y <= 135 && show_x >= 80 && show_x <= 239) // start
+    begin
+      temp_y = (show_y - 10'd104);
+      temp_x = (show_x - 10'd80) % 32;
+      big_en = 1'b1;
+      if (show_x < 112)
+        temp_dig = 5'd10; // S
+      else if (show_x < 144)
+        temp_dig = 5'd11; // T
+      else if (show_x < 176)
+        temp_dig = 5'd12; // A
+      else if (show_x < 208)
+        temp_dig = 5'd13; // R
+      else
+        temp_dig = 5'd11; // T
+    end
+
+    else if (game_state == 2'd3 && show_y >= 104 && show_y <= 135 && show_x >= 112 && show_x <= 207)
+    begin
+      temp_y = (show_y - 10'd104);
+      temp_x = (show_x - 10'd112) % 32;
+      big_en = 1'b1;
+      if (show_x < 144)
+        temp_dig = 5'd14; // W
+      else if (show_x < 176)
+        temp_dig = 5'd15; // I
+      else
+        temp_dig = 5'd16; // N
+    end
+
+    else if (show_y >= 210 && show_y <= 225) // ammo
     begin
       temp_y = show_y - 10'd210;
 
@@ -75,10 +109,20 @@ module hud_ui_text (
       end
     end
 
-    tex_x = temp_y[4:1];
+    if (big_en)
+    begin
+      tex_x = temp_y[4:2];
+      tex_y = 3'd7 - temp_x[4:2];
+    end
+    else
+    begin
+      tex_x = temp_y[4:1];
+      tex_y = 3'd7 - temp_x[4:1];
+    end
+
     tex_addr = (temp_dig << 3) + tex_x;
     tex_data = font_rom[tex_addr];
-    tex_y = 3'd7 - temp_x[4:1];
+
     if (tex_data[tex_y] == 1'b1)
     begin
       is_text = 1'b1;
