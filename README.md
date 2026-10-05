@@ -4,12 +4,15 @@ A first-person shooter rendered entirely in hardware on an FPGA. The engine cast
 
 Final project for the Digital Logic Design Lab, Department of Electrical Engineering, National Tsing Hua University (Spring 2026).
 
+[![Demo video](docs/youtube_thumbnail.png)](https://youtu.be/KautMSY55fs)
+
+▶ **[Watch the full demo on YouTube](https://youtu.be/KautMSY55fs)**
+
 | | |
 | --- | --- |
 | ![Start screen](docs/start.png) | ![Enemies in view](docs/enemies.png) |
 | ![Wall perspective](docs/walls.png) | ![Win screen](docs/win.png) |
 
-<!-- demo video link -->
 
 ![Block diagram](docs/architecture.png)
 
